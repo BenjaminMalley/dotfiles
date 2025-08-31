@@ -1,0 +1,7 @@
+startup_message off
+deflog on
+termcapinfo xterm* ti@:te@
+screen -t "Shell"
+screen -t "Gemini"
+stuff "gemini\015"
+select 0

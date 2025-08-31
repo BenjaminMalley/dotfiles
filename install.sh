@@ -39,3 +39,6 @@ echo ".gitconfig symlinked to $HOME/.gitconfig"
 
 ln -sf "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
 echo ".zshrc symlinked to $HOME/.zshrc"
+
+ln -sf "$SCRIPT_DIR/.screenrc" "$HOME/.screenrc"
+echo ".screenrc symlinked to $HOME/.screenrc"
