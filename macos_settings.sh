@@ -73,6 +73,10 @@ defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 # Disable automatic capitalization.
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
 
+# --- Stage Manager ---
+# Enable Stage Manager.
+defaults write com.apple.WindowManager GloballyEnabled -bool true
+
 # --- Finder ---
 # Show hidden files.
 defaults write com.apple.finder AppleShowAllFiles -bool true
@@ -86,8 +90,9 @@ defaults write com.apple.finder ShowStatusBar -bool true
 # Show path bar.
 defaults write com.apple.finder ShowPathbar -bool true
 
-echo "Attempting to reload settings by restarting the Dock and Finder..."
+echo "Attempting to reload settings by restarting the Dock, Finder, and WindowManager..."
 killall Dock
 killall Finder
+killall WindowManager
 
 echo "macOS preferences have been set. A logout or restart may be required for all changes to take effect."
