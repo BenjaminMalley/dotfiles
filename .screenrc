@@ -1,6 +1,10 @@
 startup_message off
 deflog on
+
+# Fix scrolling behavior
 termcapinfo xterm* ti@:te@
+
+# Default windows
 screen -t "Shell"
 screen -t "Gemini"
 stuff "gemini\015"
