@@ -1,4 +1,5 @@
 startup_message off
+logfile "$HOME/.screenlogs/screenlog_%t_%n.log"
 deflog on
 
 # Fix scrolling behavior
