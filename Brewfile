@@ -1,0 +1,8 @@
+brew "cmake"
+brew "dnsmasq"
+brew "gemini-cli"
+cask "anki"
+cask "container"
+cask "crossover"
+cask "steam"
+cask "zed"
