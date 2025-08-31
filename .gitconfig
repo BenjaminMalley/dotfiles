@@ -1,0 +1,6 @@
+[user]
+    name = Benjamin Malley
+    email = benjamin.malley@gmail.com
+[merge]
+    tool = vimdiff
+    conflictstyle = diff3
