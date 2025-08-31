@@ -46,3 +46,6 @@ echo ".zshrc symlinked to $HOME/.zshrc"
 
 ln -sf "$SCRIPT_DIR/.screenrc" "$HOME/.screenrc"
 echo ".screenrc symlinked to $HOME/.screenrc"
+
+mkdir -p "$HOME/.screenlogs"
+echo "Created $HOME/.screenlogs directory for screen logs."
