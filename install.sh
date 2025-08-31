@@ -2,6 +2,8 @@
 
 set -e
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 echo "Starting bootstrap process..."
 
 OS=$(uname -s)
@@ -27,12 +29,14 @@ if [[ "$OS" == "Darwin" ]]; then
         echo "No Brewfile found. Skipping software installation."
     fi
 
+    echo "Applying macOS settings..."
+    "$SCRIPT_DIR/macos_settings.sh"
+
 else
     echo "Not on MacOS. Skipping homebrew installation."
 fi
 
 echo "Symlinking dotfiles..."
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 ln -sf "$SCRIPT_DIR/.gitconfig" "$HOME/.gitconfig"
 echo ".gitconfig symlinked to $HOME/.gitconfig"
