@@ -4,5 +4,14 @@
   },
   "preferredEditor": "zed",
   "selectedAuthType": "oauth-personal",
-  "vimMode": true
+  "vimMode": true,
+  "ui": {
+    "hideBanner": true,
+    "accessibility": {
+      "disableLoadingPhrases": true
+    }
+  },
+  "ide": {
+    "enabled": true
+  }
 }
