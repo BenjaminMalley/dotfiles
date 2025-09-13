@@ -47,5 +47,15 @@ echo ".zshrc symlinked to $HOME/.zshrc"
 ln -sf "$SCRIPT_DIR/.screenrc" "$HOME/.screenrc"
 echo ".screenrc symlinked to $HOME/.screenrc"
 
+ln -sf "$SCRIPT_DIR/AGENT.md" "$HOME/GEMINI.md"
+echo "AGENT.md symlinked to $HOME/GEMINI.md"
+
+ln -sf "$SCRIPT_DIR/AGENT.md" "$HOME/CLAUDE.md"
+echo "AGENT.md symlinked to $HOME/CLAUDE.md"
+
+mkdir -p "$HOME/.gemini"
+ln -sf "$SCRIPT_DIR/gemini-settings.json" "$HOME/.gemini/settings.json"
+echo "gemini-settings.json symlinked to $HOME/.gemini/settings.json"
+
 mkdir -p "$HOME/.screenlogs"
 echo "Created $HOME/.screenlogs directory for screen logs."

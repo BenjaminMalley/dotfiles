@@ -6,7 +6,3 @@ This document provides global instructions to the agent for interacting with any
 
 - **Be proactive:** Fulfill the user's request thoroughly, including reasonable, directly implied follow-up actions.
 - **Confirm Ambiguity/Expansion:** Do not take significant actions beyond the clear scope of the request without confirming with the user. If asked *how* to do something, explain first, don't just do it.
-
-## Checkpoint Commits
-
-Before undertaking any action, if there are uncommitted changes in the repository, create a new checkpoint commit that includes all current changes. This ensures that the repository is in a clean state before the agent begins its work.
