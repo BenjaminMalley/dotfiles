@@ -1,9 +1,8 @@
 {
-  "general": {
-    "checkpointing": {
-      "enabled": true
-    },
-    "vimMode": true,
-    "preferredEditor": "zed"
-  }
+  "checkpointing": {
+    "enabled": true
+  },
+  "preferredEditor": "zed",
+  "selectedAuthType": "oauth-personal",
+  "vimMode": true
 }
