@@ -1,0 +1,9 @@
+{
+  "general": {
+    "checkpointing": {
+      "enabled": true
+    },
+    "vimMode": true,
+    "preferredEditor": "zed"
+  }
+}
