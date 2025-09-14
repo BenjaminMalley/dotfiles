@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Sets macOS preferences.
 
 echo "Setting macOS preferences..."

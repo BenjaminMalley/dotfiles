@@ -1,17 +1,14 @@
 {
+  "accessibility": {
+    "disableLoadingPhrases": true
+  },
   "checkpointing": {
     "enabled": true
   },
+  "hideBanner": true,
+  "ideMode": true,
   "preferredEditor": "zed",
   "selectedAuthType": "oauth-personal",
-  "vimMode": true,
-  "ui": {
-    "hideBanner": true,
-    "accessibility": {
-      "disableLoadingPhrases": true
-    }
-  },
-  "ide": {
-    "enabled": true
-  }
+  "theme": "Default",
+  "vimMode": true
 }
