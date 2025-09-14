@@ -77,6 +77,7 @@ def install_dotfiles():
     symlink_file('AGENT.md', 'GEMINI.md')
     symlink_file('AGENT.md', 'CLAUDE.md')
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
+    symlink_file('agents', os.path.join('.claude', 'agents'))
 
     # Create screenlogs directory
     screenlogs_dir = os.path.join(os.environ.get('HOME', ''), '.screenlogs')
