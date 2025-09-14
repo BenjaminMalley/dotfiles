@@ -1,0 +1,6 @@
+cask "crossover"
+cask "dolphin"
+cask "steam"
+cask "valhalla-supermassive"
+cask "retroarch-metal"
+cask "stremio"
