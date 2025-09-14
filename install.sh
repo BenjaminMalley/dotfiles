@@ -9,7 +9,7 @@ echo "Starting bootstrap process..."
 OS=$(uname -s)
 
 if [[ "$OS" == "Darwin" ]]; then
-    echo "Detected macOS. Installing Homebrew and software from Brewfile.mac..."
+    echo "Detected macOS. Installing Homebrew and software from Brewfile..."
 
     if ! command -v brew &> /dev/null; then
         echo "Homebrew not found. Installing Homebrew..."
@@ -23,10 +23,21 @@ if [[ "$OS" == "Darwin" ]]; then
     fi
 
     if [ -f "Brewfile" ]; then
-        echo "Installing software from Brewfile.mac..."
+        echo "Installing software from Brewfile..."
         brew bundle --file="Brewfile"
     else
         echo "No Brewfile found. Skipping software installation."
+    fi
+
+    if [ -f "Brewfile.opt" ]; then
+        read -p "Do you want to install optional software from Brewfile.opt? (y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "Installing optional software from Brewfile.opt..."
+            brew bundle --file="Brewfile.opt"
+        else
+            echo "Skipping optional software installation."
+        fi
     fi
 
     echo "Applying macOS settings..."
