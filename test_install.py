@@ -1,4 +1,3 @@
-
 import unittest
 import os
 import platform
@@ -14,8 +13,6 @@ class TestInstallScript(unittest.TestCase):
         """Set up a temporary environment for testing."""
         self.temp_dir = os.path.join(os.path.dirname(__file__), 'temp_test')
         os.makedirs(self.temp_dir, exist_ok=True)
-        self.agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
-        os.makedirs(self.agents_dir, exist_ok=True)
         self.old_home = os.environ.get('HOME')
         os.environ['HOME'] = self.temp_dir
 
@@ -29,8 +26,6 @@ class TestInstallScript(unittest.TestCase):
         # Safely remove the temp directory and its contents
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
-        if os.path.exists(self.agents_dir):
-            shutil.rmtree(self.agents_dir)
 
     @patch('install.set_macos_preferences')
     @patch('install.run_command')
@@ -42,10 +37,6 @@ class TestInstallScript(unittest.TestCase):
         # Arrange
         brewfile = os.path.join(os.path.dirname(__file__), 'Brewfile')
         brewfile_opt = os.path.join(os.path.dirname(__file__), 'Brewfile.opt')
-        with open(brewfile, 'w') as f:
-            f.write('brew "test-package"')
-        with open(brewfile_opt, 'w') as f:
-            f.write('brew "optional-package"')
 
         # Act
         install.install_dotfiles()
@@ -59,10 +50,6 @@ class TestInstallScript(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
-
-        # Clean up dummy files
-        os.remove(brewfile)
-        os.remove(brewfile_opt)
 
     @patch('install.set_macos_preferences')
     @patch('platform.system', return_value='Linux')
