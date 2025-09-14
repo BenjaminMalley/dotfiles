@@ -57,6 +57,8 @@ class TestInstallScript(unittest.TestCase):
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
 
         # Clean up dummy files
         os.remove(brewfile)
@@ -73,6 +75,8 @@ class TestInstallScript(unittest.TestCase):
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
 
 if __name__ == '__main__':
     unittest.main()
