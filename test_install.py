@@ -2,6 +2,7 @@
 import unittest
 import os
 import platform
+import shutil
 from unittest.mock import patch, call
 
 # Import the module to be tested
@@ -13,6 +14,8 @@ class TestInstallScript(unittest.TestCase):
         """Set up a temporary environment for testing."""
         self.temp_dir = os.path.join(os.path.dirname(__file__), 'temp_test')
         os.makedirs(self.temp_dir, exist_ok=True)
+        self.agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
+        os.makedirs(self.agents_dir, exist_ok=True)
         self.old_home = os.environ.get('HOME')
         os.environ['HOME'] = self.temp_dir
 
@@ -25,13 +28,9 @@ class TestInstallScript(unittest.TestCase):
         
         # Safely remove the temp directory and its contents
         if os.path.exists(self.temp_dir):
-            for root, dirs, files in os.walk(self.temp_dir, topdown=False):
-                for name in files:
-                    os.remove(os.path.join(root, name))
-                for name in dirs:
-                    os.rmdir(os.path.join(root, name))
-            if os.path.exists(self.temp_dir):
-                os.rmdir(self.temp_dir)
+            shutil.rmtree(self.temp_dir)
+        if os.path.exists(self.agents_dir):
+            shutil.rmtree(self.agents_dir)
 
     @patch('install.set_macos_preferences')
     @patch('install.run_command')
@@ -57,6 +56,7 @@ class TestInstallScript(unittest.TestCase):
         mock_run_command.assert_any_call(['brew', 'bundle', f'--file={brewfile_opt}'])
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
 
         # Clean up dummy files
         os.remove(brewfile)
@@ -72,6 +72,7 @@ class TestInstallScript(unittest.TestCase):
         # Assert
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
 
 if __name__ == '__main__':
     unittest.main()
