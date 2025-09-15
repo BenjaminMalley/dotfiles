@@ -9,3 +9,8 @@ alias screen="env -u COLORTERM screen"
 if [[ $- == *i* ]] && [[ -z "$STY" ]]; then
   screen -D -R
 fi
+
+# Source local configuration
+if [ -f ~/.zshrc.local ]; then
+  . ~/.zshrc.local
+fi
