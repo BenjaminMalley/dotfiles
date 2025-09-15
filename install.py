@@ -33,6 +33,32 @@ def symlink_file(source, destination):
     print(f"{source} symlinked to {destination_path}")
 
 
+def symlink_agent_files():
+    """Symlinks each agent file to the ~/.claude/agents directory."""
+    home_dir = os.environ.get('HOME', '')
+    agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
+    claude_agents_dir = os.path.join(home_dir, '.claude', 'agents')
+
+    if not os.path.isdir(agents_dir):
+        print(f"Warning: {agents_dir} not found. Skipping agent symlinking.")
+        return
+
+    os.makedirs(claude_agents_dir, exist_ok=True)
+
+    for filename in os.listdir(agents_dir):
+        source_path = os.path.join(agents_dir, filename)
+        destination_path = os.path.join(claude_agents_dir, filename)
+
+        if os.path.islink(destination_path):
+            os.remove(destination_path)
+        elif os.path.exists(destination_path):
+            print(f"Warning: {destination_path} exists and is not a symlink. Skipping.")
+            continue
+        
+        os.symlink(source_path, destination_path)
+        print(f"{filename} symlinked to {destination_path}")
+
+
 def install_dotfiles():
     """Installs dotfiles and software."""
     print("Starting bootstrap process...")
@@ -77,7 +103,7 @@ def install_dotfiles():
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
     symlink_file('AGENT.md', os.path.join('.claude', 'CLAUDE.md'))
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
-    symlink_file('agents', os.path.join('.claude', 'agents'))
+    symlink_agent_files()
 
     # Create screenlogs directory
     screenlogs_dir = os.path.join(os.environ.get('HOME', ''), '.screenlogs')
