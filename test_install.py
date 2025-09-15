@@ -37,6 +37,8 @@ class TestInstallScript(unittest.TestCase):
         # Arrange
         brewfile = os.path.join(os.path.dirname(__file__), 'Brewfile')
         brewfile_opt = os.path.join(os.path.dirname(__file__), 'Brewfile.opt')
+        agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
+        agent_files = os.listdir(agents_dir)
 
         # Act
         install.install_dotfiles()
@@ -47,7 +49,12 @@ class TestInstallScript(unittest.TestCase):
         mock_run_command.assert_any_call(['brew', 'bundle', f'--file={brewfile_opt}'])
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
-        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
+
+        claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
+        self.assertTrue(os.path.isdir(claude_agents_dir))
+        for agent_file in agent_files:
+            self.assertTrue(os.path.islink(os.path.join(claude_agents_dir, agent_file)))
+
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
 
@@ -55,13 +62,22 @@ class TestInstallScript(unittest.TestCase):
     @patch('platform.system', return_value='Linux')
     def test_install_linux(self, mock_system, mock_set_macos):
         """Test the install script on Linux."""
+        # Arrange
+        agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
+        agent_files = os.listdir(agents_dir)
+
         # Act
         install.install_dotfiles()
 
         # Assert
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
-        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'agents')))
+
+        claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
+        self.assertTrue(os.path.isdir(claude_agents_dir))
+        for agent_file in agent_files:
+            self.assertTrue(os.path.islink(os.path.join(claude_agents_dir, agent_file)))
+
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
 
