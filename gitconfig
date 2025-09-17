@@ -1,0 +1,17 @@
+[push]
+	default = current
+[remote "origin"]
+	push = refs/heads/*:refs/heads/benjamin_malley-*
+[core]
+	fsmonitor = true
+[feature]
+	manyFiles = true
+[merge]
+	tool = vimdiff
+	conflictStyle = diff3
+[diff]
+	tool = vimdiff
+[difftool]
+	prompt = true
+[include]
+	path = ~/.gitconfig.local

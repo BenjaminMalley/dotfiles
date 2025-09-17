@@ -7,7 +7,7 @@ alias screen="env -u COLORTERM screen"
 
 # Automatically start screen
 if [[ $- == *i* ]] && [[ -z "$STY" ]]; then
-  screen -D -R
+  screen -R
 fi
 
 # Source local configuration

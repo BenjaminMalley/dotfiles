@@ -26,8 +26,8 @@ def symlink_file(source, destination):
     if os.path.islink(destination_path):
         os.remove(destination_path)
     elif os.path.exists(destination_path):
-        print(f"Warning: {destination_path} exists and is not a symlink. Skipping.")
-        return
+        print(f"Warning: {destination_path} exists and is not a symlink. Backing it up to {destination_path}.bak.")
+        shutil.move(destination_path, f"{destination_path}.bak")
         
     os.symlink(source_path, destination_path)
     print(f"{source} symlinked to {destination_path}")
@@ -97,7 +97,7 @@ def install_dotfiles():
         print("Not on MacOS. Skipping homebrew and macOS settings installation.")
 
     print("Symlinking dotfiles...")
-    symlink_file('.gitconfig', '.gitconfig')
+    symlink_file('gitconfig', '.gitconfig')
     symlink_file('.zshrc', '.zshrc')
     symlink_file('.screenrc', '.screenrc')
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
