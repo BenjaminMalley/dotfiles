@@ -27,6 +27,14 @@ class TestInstallScript(unittest.TestCase):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
+    def test_symlink_gitconfig(self):
+        """Test that .gitconfig is symlinked correctly."""
+        install.symlink_file('gitconfig', '.gitconfig')
+        destination_path = os.path.join(self.temp_dir, '.gitconfig')
+        self.assertTrue(os.path.islink(destination_path))
+        source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
+        self.assertEqual(os.path.realpath(destination_path), source_path)
+
     @patch('install.set_macos_preferences')
     @patch('install.run_command')
     @patch('builtins.input', return_value='y')
@@ -80,6 +88,27 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
+
+    def test_symlink_gitconfig_with_existing_file(self):
+        """Test symlinking with an existing file at the destination."""
+        destination_path = os.path.join(self.temp_dir, '.gitconfig')
+        with open(destination_path, 'w') as f:
+            f.write('old config')
+
+        # Act
+        install.symlink_file('gitconfig', '.gitconfig')
+
+        # Assert
+        self.assertTrue(os.path.islink(destination_path))
+        
+        backup_path = f"{destination_path}.bak"
+        self.assertTrue(os.path.exists(backup_path))
+        with open(backup_path, 'r') as f:
+            content = f.read()
+        self.assertEqual(content, 'old config')
+        
+        source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
+        self.assertEqual(os.path.realpath(destination_path), source_path)
 
 if __name__ == '__main__':
     unittest.main()
