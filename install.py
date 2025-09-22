@@ -1,4 +1,3 @@
-
 import subprocess
 import platform
 import os
@@ -6,14 +5,14 @@ import shutil
 from macos_settings import set_macos_preferences
 
 
-def run_command(command):
+def run_command(command, check=True):
     """Runs a command and checks for errors."""
     try:
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=check)
     except FileNotFoundError:
-        print(f"Warning: Command '{command[0]}' not found. Skipping.")
+        print(f"Warning: Command ''{command[0]}'' not found. Skipping.")
     except subprocess.CalledProcessError as e:
-        print(f"Warning: Command '{' '.join(command)}' failed with error: {e}")
+        print(f"Warning: Command ''{' '.join(command)}'' failed with error: {e}")
 
 
 def symlink_file(source, destination):
@@ -99,16 +98,14 @@ def install_dotfiles():
     print("Symlinking dotfiles...")
     symlink_file('gitconfig', '.gitconfig')
     symlink_file('.zshrc', '.zshrc')
-    symlink_file('.screenrc', '.screenrc')
+    symlink_file('.tmux.conf', '.tmux.conf')
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
     symlink_file('AGENT.md', os.path.join('.claude', 'CLAUDE.md'))
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
     symlink_agent_files()
 
-    # Create screenlogs directory
-    screenlogs_dir = os.path.join(os.environ.get('HOME', ''), '.screenlogs')
-    os.makedirs(screenlogs_dir, exist_ok=True)
-    print(f"Created {screenlogs_dir} directory for screen logs.")
+    print("Killing tmux server to apply changes to .tmux.conf...")
+    run_command(['tmux', 'kill-server'], check=False)
 
 
 if __name__ == '__main__':
