@@ -22,7 +22,7 @@ class TestInstallScript(unittest.TestCase):
             os.environ['HOME'] = self.old_home
         else:
             del os.environ['HOME']
-        
+
         # Safely remove the temp directory and its contents
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
@@ -33,6 +33,14 @@ class TestInstallScript(unittest.TestCase):
         destination_path = os.path.join(self.temp_dir, '.gitconfig')
         self.assertTrue(os.path.islink(destination_path))
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
+        self.assertEqual(os.path.realpath(destination_path), source_path)
+
+    def test_symlink_tmux_conf(self):
+        """Test that .tmux.conf is symlinked correctly."""
+        install.symlink_file('.tmux.conf', '.tmux.conf')
+        destination_path = os.path.join(self.temp_dir, '.tmux.conf')
+        self.assertTrue(os.path.islink(destination_path))
+        source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), '.tmux.conf'))
         self.assertEqual(os.path.realpath(destination_path), source_path)
 
     @patch('install.set_macos_preferences')
@@ -55,6 +63,7 @@ class TestInstallScript(unittest.TestCase):
         mock_run_command.assert_any_call(['brew', 'update'])
         mock_run_command.assert_any_call(['brew', 'bundle', f'--file={brewfile}'])
         mock_run_command.assert_any_call(['brew', 'bundle', f'--file={brewfile_opt}'])
+        mock_run_command.assert_any_call(['tmux', 'kill-server'], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
 
@@ -66,9 +75,10 @@ class TestInstallScript(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
 
+    @patch('install.run_command')
     @patch('install.set_macos_preferences')
     @patch('platform.system', return_value='Linux')
-    def test_install_linux(self, mock_system, mock_set_macos):
+    def test_install_linux(self, mock_system, mock_set_macos, mock_run_command):
         """Test the install script on Linux."""
         # Arrange
         agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
@@ -78,6 +88,7 @@ class TestInstallScript(unittest.TestCase):
         install.install_dotfiles()
 
         # Assert
+        mock_run_command.assert_called_once_with(['tmux', 'kill-server'], check=False)
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
 
@@ -100,13 +111,13 @@ class TestInstallScript(unittest.TestCase):
 
         # Assert
         self.assertTrue(os.path.islink(destination_path))
-        
+
         backup_path = f"{destination_path}.bak"
         self.assertTrue(os.path.exists(backup_path))
         with open(backup_path, 'r') as f:
             content = f.read()
         self.assertEqual(content, 'old config')
-        
+
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
         self.assertEqual(os.path.realpath(destination_path), source_path)
 

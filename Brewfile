@@ -1,6 +1,7 @@
 brew "cmake"
 brew "dnsmasq"
 brew "gemini-cli"
+brew "tmux"
 cask "anki"
 cask "container"
 cask "zed"
