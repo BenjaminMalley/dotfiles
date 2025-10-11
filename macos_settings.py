@@ -56,6 +56,9 @@ def set_macos_preferences():
     run_command(['defaults', 'write', 'com.apple.dock', 'autohide', '-bool', 'true'])
     run_command(['defaults', 'write', 'com.apple.dock', 'autohide-delay', '-float', '0'])
 
+    # --- Menu Bar ---
+    run_command(['defaults', 'write', 'NSGlobalDomain', '_HIHideMenuBar', '-bool', 'true'])
+
     # --- Keyboard ---
     run_command(['defaults', 'write', 'NSGlobalDomain', 'KeyRepeat', '-int', '2'])
     run_command(['defaults', 'write', 'NSGlobalDomain', 'InitialKeyRepeat', '-int', '12'])
@@ -76,6 +79,7 @@ def set_macos_preferences():
     run_command(['killall', 'Dock'])
     run_command(['killall', 'Finder'])
     run_command(['killall', 'WindowManager'])
+    run_command(['killall', 'SystemUIServer'])
 
     print("macOS preferences have been set. A logout or restart may be required for all changes to take effect.")
 
