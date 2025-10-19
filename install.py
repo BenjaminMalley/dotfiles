@@ -104,6 +104,13 @@ def install_dotfiles():
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
     symlink_agent_files()
 
+    # Create empty .screenrc.local if it doesn't exist
+    home_dir = os.environ.get('HOME', '')
+    screenrc_local = os.path.join(home_dir, '.screenrc.local')
+    if not os.path.exists(screenrc_local):
+        open(screenrc_local, 'a').close()
+        print(f"Created empty {screenrc_local}")
+
     print("Killing screen sessions to apply changes to .screenrc...")
     run_command(['screen', '-wipe'], check=False)
 
