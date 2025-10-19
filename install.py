@@ -98,14 +98,14 @@ def install_dotfiles():
     print("Symlinking dotfiles...")
     symlink_file('gitconfig', '.gitconfig')
     symlink_file('.zshrc', '.zshrc')
-    symlink_file('.tmux.conf', '.tmux.conf')
+    symlink_file('.screenrc', '.screenrc')
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
     symlink_file('AGENT.md', os.path.join('.claude', 'CLAUDE.md'))
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
     symlink_agent_files()
 
-    print("Killing tmux server to apply changes to .tmux.conf...")
-    run_command(['tmux', 'kill-server'], check=False)
+    print("Killing screen sessions to apply changes to .screenrc...")
+    run_command(['screen', '-wipe'], check=False)
 
 
 if __name__ == '__main__':
