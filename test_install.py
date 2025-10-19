@@ -74,6 +74,7 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, '.screenrc.local')))
 
     @patch('install.run_command')
     @patch('install.set_macos_preferences')
@@ -99,6 +100,7 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, '.screenrc.local')))
 
     def test_symlink_gitconfig_with_existing_file(self):
         """Test symlinking with an existing file at the destination."""
