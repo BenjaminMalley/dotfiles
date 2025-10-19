@@ -10,3 +10,6 @@ screen -t "Shell"
 screen -t "Gemini"
 stuff "gemini\015"
 select 0
+
+# Source local configuration
+source $HOME/.screenrc.local
