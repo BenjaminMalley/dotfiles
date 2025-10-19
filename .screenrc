@@ -1,0 +1,12 @@
+startup_message off
+logfile "$HOME/.screenlogs/screenlog_%t_%n.log"
+deflog on
+
+# Fix scrolling behavior
+termcapinfo xterm* ti@:te@
+
+# Default windows
+screen -t "Shell"
+screen -t "Gemini"
+stuff "gemini\015"
+select 0
