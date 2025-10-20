@@ -65,6 +65,8 @@ def set_macos_preferences():
     run_command(['defaults', 'write', 'NSGlobalDomain', 'AppleKeyboardUIMode', '-int', '3'])
     run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticSpellingCorrectionEnabled', '-bool', 'false'])
     run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticCapitalizationEnabled', '-bool', 'false'])
+    run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticQuoteSubstitutionEnabled', '-bool', 'false'])
+    run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticDashSubstitutionEnabled', '-bool', 'false'])
 
     # --- Stage Manager ---
     run_command(['defaults', 'write', 'com.apple.WindowManager', 'GloballyEnabled', '-bool', 'true'])
@@ -74,6 +76,10 @@ def set_macos_preferences():
     run_command(['defaults', 'write', 'NSGlobalDomain', 'AppleShowAllExtensions', '-bool', 'true'])
     run_command(['defaults', 'write', 'com.apple.finder', 'ShowStatusBar', '-bool', 'true'])
     run_command(['defaults', 'write', 'com.apple.finder', 'ShowPathbar', '-bool', 'true'])
+
+    # --- Terminal ---
+    run_command(['defaults', 'write', 'com.apple.Terminal', 'VisualBell', '-bool', 'false'])
+    run_command(['defaults', 'write', 'com.apple.Terminal', 'AudibleBell', '-bool', 'false'])
 
     print("Attempting to reload settings by restarting the Dock, Finder, and WindowManager...")
     run_command(['killall', 'Dock'])
