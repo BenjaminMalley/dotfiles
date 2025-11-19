@@ -1,6 +1,10 @@
 startup_message off
-logfile "$HOME/.screenlogs/screenlog_%t_%n.log"
-deflog on
+# Logging disabled to prevent chown errors in some terminal environments
+# logfile "$HOME/.screenlogs/screenlog_%t_%n.log"
+# deflog on
+
+# Suppress "New screen..." messages when creating windows
+msgwait 0
 
 # Fix scrolling behavior - use alternate screen per window
 altscreen on
@@ -10,5 +14,5 @@ termcapinfo xterm*|xterm-256color|screen-256color
 # Default windows
 screen -t "Shell"
 
-# Source local configuration
+# Source local configuration if it exists
 source $HOME/.screenrc.local
