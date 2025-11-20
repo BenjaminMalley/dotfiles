@@ -84,12 +84,32 @@ def install_dotfiles():
 
         brewfile_opt = os.path.join(script_dir, 'Brewfile.opt')
         if os.path.exists(brewfile_opt):
-            response = input("Do you want to install optional software from Brewfile.opt? (y/n) ")
-            if response.lower() == 'y':
-                print("Installing optional software from Brewfile.opt...")
-                run_command(['brew', 'bundle', f'--file={brewfile_opt}'])
-            else:
-                print("Skipping optional software installation.")
+            print("Checking for optional software in Brewfile.opt...")
+            with open(brewfile_opt, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+
+                    parts = line.split()
+                    if len(parts) != 2:
+                        print(f"Warning: Skipping malformed line in Brewfile.opt: {line}")
+                        continue
+
+                    command, package = parts
+                    package = package.strip('"')
+
+                    response = input(f"Do you want to install optional software '{package}'? (y/n) ")
+                    if response.lower() == 'y':
+                        print(f"Installing {package}...")
+                        if command == 'cask':
+                            run_command(['brew', 'install', '--cask', package])
+                        else:
+                            run_command(['brew', 'install', package])
+                    else:
+                        print(f"Skipping {package}.")
+        else:
+            print("No Brewfile.opt found. Skipping optional software installation.")
 
         set_macos_preferences()
     else:
