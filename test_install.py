@@ -56,13 +56,31 @@ class TestInstallScript(unittest.TestCase):
         agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
         agent_files = os.listdir(agents_dir)
 
+        # Expected calls for optional software
+        expected_optional_calls = []
+        with open(brewfile_opt, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                parts = line.split()
+                command_type, package = parts[0], parts[1].strip('"')
+                if command_type == 'cask':
+                    expected_optional_calls.append(call(['brew', 'install', '--cask', package]))
+                else:
+                    expected_optional_calls.append(call(['brew', 'install', package]))
+
         # Act
         install.install_dotfiles()
 
         # Assert
         mock_run_command.assert_any_call(['brew', 'update'])
         mock_run_command.assert_any_call(['brew', 'bundle', f'--file={brewfile}'])
-        mock_run_command.assert_any_call(['brew', 'bundle', f'--file={brewfile_opt}'])
+        
+        # Add new assertions for individual optional software installs
+        for expected_call in expected_optional_calls:
+            mock_run_command.assert_any_call(*expected_call.args, **expected_call.kwargs)
+
         mock_run_command.assert_any_call(['screen', '-wipe'], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
