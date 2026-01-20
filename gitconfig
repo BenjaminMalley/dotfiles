@@ -15,3 +15,5 @@
 	prompt = true
 [include]
 	path = ~/.gitconfig.local
+[alias]
+	gph = "!f() { git push -f origin \"HEAD:refs/heads/benjamin_malley-$(git rev-parse --abbrev-ref HEAD)\" \"$@\"; }; f"
