@@ -118,21 +118,21 @@ def install_dotfiles():
     print("Symlinking dotfiles...")
     symlink_file('gitconfig', '.gitconfig')
     symlink_file('.zshrc', '.zshrc')
-    symlink_file('.screenrc', '.screenrc')
+    symlink_file('.tmux.conf', '.tmux.conf')
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
     symlink_file('AGENT.md', os.path.join('.claude', 'CLAUDE.md'))
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
     symlink_agent_files()
 
-    # Create empty .screenrc.local if it doesn't exist
+    # Create empty .tmux.conf.local if it doesn't exist
     home_dir = os.environ.get('HOME', '')
-    screenrc_local = os.path.join(home_dir, '.screenrc.local')
-    if not os.path.exists(screenrc_local):
-        open(screenrc_local, 'a').close()
-        print(f"Created empty {screenrc_local}")
+    tmux_conf_local = os.path.join(home_dir, '.tmux.conf.local')
+    if not os.path.exists(tmux_conf_local):
+        open(tmux_conf_local, 'a').close()
+        print(f"Created empty {tmux_conf_local}")
 
-    print("Killing screen sessions to apply changes to .screenrc...")
-    run_command(['screen', '-wipe'], check=False)
+    print("Killing tmux server to apply changes to .tmux.conf...")
+    run_command(['tmux', 'kill-server'], check=False)
 
 
 if __name__ == '__main__':
