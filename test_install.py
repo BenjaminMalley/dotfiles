@@ -35,12 +35,12 @@ class TestInstallScript(unittest.TestCase):
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
         self.assertEqual(os.path.realpath(destination_path), source_path)
 
-    def test_symlink_screenrc(self):
-        """Test that .screenrc is symlinked correctly."""
-        install.symlink_file('.screenrc', '.screenrc')
-        destination_path = os.path.join(self.temp_dir, '.screenrc')
+    def test_symlink_tmux_conf(self):
+        """Test that .tmux.conf is symlinked correctly."""
+        install.symlink_file('.tmux.conf', '.tmux.conf')
+        destination_path = os.path.join(self.temp_dir, '.tmux.conf')
         self.assertTrue(os.path.islink(destination_path))
-        source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), '.screenrc'))
+        source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), '.tmux.conf'))
         self.assertEqual(os.path.realpath(destination_path), source_path)
 
     @patch('install.set_macos_preferences')
@@ -81,7 +81,7 @@ class TestInstallScript(unittest.TestCase):
         for expected_call in expected_optional_calls:
             mock_run_command.assert_any_call(*expected_call.args, **expected_call.kwargs)
 
-        mock_run_command.assert_any_call(['screen', '-wipe'], check=False)
+        mock_run_command.assert_any_call(['tmux', 'kill-server'], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
 
@@ -92,7 +92,7 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
-        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, '.screenrc.local')))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, '.tmux.conf.local')))
 
     @patch('install.run_command')
     @patch('install.set_macos_preferences')
@@ -107,7 +107,7 @@ class TestInstallScript(unittest.TestCase):
         install.install_dotfiles()
 
         # Assert
-        mock_run_command.assert_called_once_with(['screen', '-wipe'], check=False)
+        mock_run_command.assert_called_once_with(['tmux', 'kill-server'], check=False)
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
 
@@ -118,7 +118,7 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
-        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, '.screenrc.local')))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, '.tmux.conf.local')))
 
     def test_symlink_gitconfig_with_existing_file(self):
         """Test symlinking with an existing file at the destination."""
