@@ -10,5 +10,10 @@
   "preferredEditor": "zed",
   "selectedAuthType": "oauth-personal",
   "theme": "Default",
-  "vimMode": true
+  "vimMode": true,
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  }
 }
