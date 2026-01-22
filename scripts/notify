@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get directory of this script to find inbox-manager
+SCRIPT_DIR=$(dirname "$0")
+
 # Default values
 TITLE="Task Complete"
 MESSAGE="The command has finished."
@@ -13,11 +16,18 @@ if [ -n "$2" ]; then
     TITLE="$2"
 fi
 
+# Add to Inbox if inside tmux
+if [ -n "$TMUX" ]; then
+    CURRENT_SESSION=$(tmux display-message -p '#S')
+    CURRENT_WINDOW=$(tmux display-message -p '#I')
+    "$SCRIPT_DIR/inbox-manager" add "$CURRENT_SESSION" "$CURRENT_WINDOW" "$MESSAGE"
+fi
+
 # Send notification on macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
     osascript -e "display notification \"$MESSAGE\" with title \"$TITLE\" sound name \"Glass\""
 else
-    # Fallback for other systems (e.g., simple bell)
+    # Fallback for other systems
     echo -e "\a"
     echo "Notification: $TITLE - $MESSAGE"
 fi
