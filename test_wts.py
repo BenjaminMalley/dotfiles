@@ -4,6 +4,9 @@ import shutil
 import subprocess
 import time
 import sys
+from unittest.mock import patch
+from pathlib import Path
+import importlib.util
 
 # Path to the wts script
 WTS_SCRIPT = os.path.abspath(os.path.join(os.path.dirname(__file__), 'scripts', 'wts'))
@@ -32,7 +35,7 @@ class TestWtsIntegration(unittest.TestCase):
         subprocess.run(['git', 'config', 'user.name', 'Test User'], cwd=self.test_dir, check=True)
         subprocess.run(['git', 'commit', '--allow-empty', '-m', 'Initial commit'], cwd=self.test_dir, check=True, stdout=subprocess.DEVNULL)
 
-        # Create worktree
+        # Create worktree for the cleanup test
         self.worktree_path = os.path.join(self.test_dir, 'feature-branch')
         subprocess.run(['git', 'worktree', 'add', self.worktree_path, '-b', 'feature-branch'], cwd=self.test_dir, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
@@ -53,6 +56,46 @@ class TestWtsIntegration(unittest.TestCase):
         # Clean up temp dir
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir)
+
+    def test_wts_create(self):
+        """Tests the creation of a worktree and tmux session."""
+        branch_name = "new-feature"
+        # Create the branch first
+        subprocess.run(['git', 'branch', branch_name], cwd=self.test_dir, check=True)
+        
+        # Create a fake tmux script to intercept calls
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n')
+            f.write('  exit 1\n')
+            f.write('fi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+        
+        # Setup environment to use fake home and fake tmux
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+        
+        # Run wts script
+        subprocess.run([sys.executable, WTS_SCRIPT, branch_name], cwd=self.test_dir, env=env, check=True)
+
+        # Verify worktree was created
+        repo_name = os.path.basename(self.test_dir)
+        # wts creates worktrees in ~/worktrees/<repo>/<branch>
+        expected_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
+        self.assertTrue(os.path.exists(expected_path), f"Worktree should be created at {expected_path}")
+        
+        # Verify tmux execution was attempted
+        self.assertTrue(os.path.exists(tmux_log), "tmux should have been called")
+        with open(tmux_log, 'r') as f:
+            content = f.read()
+            self.assertIn("new-session", content)
+            self.assertIn(branch_name, content)
 
     def test_wts_done(self):
         # Start tmux session running the wts command directly
