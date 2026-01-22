@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Default values
+TITLE="Task Complete"
+MESSAGE="The command has finished."
+
+# Override with arguments if provided
+if [ -n "$1" ]; then
+    MESSAGE="$1"
+fi
+
+if [ -n "$2" ]; then
+    TITLE="$2"
+fi
+
+# Send notification on macOS
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    osascript -e "display notification \"$MESSAGE\" with title \"$TITLE\" sound name \"Glass\""
+else
+    # Fallback for other systems (e.g., simple bell)
+    echo -e "\a"
+    echo "Notification: $TITLE - $MESSAGE"
+fi
