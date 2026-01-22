@@ -13,9 +13,8 @@ bindkey -M vicmd '/' history-incremental-search-backward
 
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
     SESSION_NAME="tmux-${PWD//\//-}"
-    if tmux has-session -t "=${SESSION_NAME}" 2>/dev/null; then
-        tmux attach-session -t "${SESSION_NAME}"
-    fi
+    # Try to attach to the session, suppressing errors if it doesn't exist.
+    tmux attach-session -t "$SESSION_NAME" &>/dev/null || true
 fi
 
 # Source local configuration
