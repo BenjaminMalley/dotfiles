@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+import subprocess
+import os
+import sys
+from pathlib import Path
+
+def run_command(command, check=True):
+    """Runs a command."""
+    try:
+        subprocess.run(
+            command,
+            check=check,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print(f"Error: Command '{command[0]}' not found.", file=sys.stderr)
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Command '{' '.join(command)}' failed with error: {e.stderr}", file=sys.stderr)
+        sys.exit(1)
+
+def main():
+    """Main function to create worktree and tmux session."""
+    # Check if we are in a git repository
+    try:
+        subprocess.run(['git', 'rev-parse', '--is-inside-work-tree'], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Error: Not in a git repository.", file=sys.stderr)
+        sys.exit(1)
+
+    # Get branch name from argument
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} <branch-name>", file=sys.stderr)
+        sys.exit(1)
+    branch_name = sys.argv[1]
+
+    # Get repository name
+    repo_toplevel_result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True)
+    repo_toplevel = repo_toplevel_result.stdout.strip()
+    repo_name = os.path.basename(repo_toplevel)
+
+    # Define paths and names
+    home_dir = Path.home()
+    worktree_path = home_dir / "worktrees" / repo_name / branch_name
+    session_name = f"{repo_name}-{branch_name}"
+
+    # Create worktree if it doesn't exist
+    if worktree_path.exists():
+        print(f"Worktree already exists at {worktree_path}")
+    else:
+        print(f"Creating worktree for branch '{branch_name}' at {worktree_path}...")
+        worktree_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        branch_exists_result = subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch_name}'])
+        if branch_exists_result.returncode != 0:
+            try:
+                create_branch = input(f"Branch '{branch_name}' does not exist. Create it? (y/n) ")
+                if create_branch.lower() == 'y':
+                    run_command(['git', 'branch', branch_name])
+                else:
+                    print("Aborting.")
+                    sys.exit(0)
+            except (EOFError, KeyboardInterrupt):
+                print("\nAborting.")
+                sys.exit(0)
+
+
+        run_command(['git', 'worktree', 'add', str(worktree_path), branch_name])
+
+    # Check if tmux session exists
+    session_exists_result = subprocess.run(['tmux', 'has-session', '-t', f'={session_name}'], capture_output=True)
+
+    if session_exists_result.returncode == 0:
+        print(f"Session '{session_name}' already exists.")
+    else:
+        print(f"Creating new tmux session '{session_name}'...")
+        run_command(['tmux', 'new-session', '-d', '-s', session_name, '-c', str(worktree_path)])
+
+    # If inside tmux, switch to the new session, otherwise attach
+    if 'TMUX' in os.environ:
+        print(f"Switching to session '{session_name}'...")
+        # Use execvp to replace the current process with tmux
+        os.execvp('tmux', ['tmux', 'switch-client', '-t', session_name])
+    else:
+        print(f"Attaching to session '{session_name}'...")
+        os.execvp('tmux', ['tmux', 'attach-session', '-t', session_name])
+
+if __name__ == "__main__":
+    main()
