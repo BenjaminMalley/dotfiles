@@ -103,11 +103,13 @@ def set_macos_preferences():
     run_command(['gh', 'config', 'set', 'prompt', 'disabled'])
 
     # Close window on exit and set transparency for unfocused windows
-    for profile in ["Basic", "Pro"]:
+    for profile in ["Basic", "Pro", "Clear Dark"]:
         set_terminal_profile_setting(profile, "shellExitAction", "integer", "1")
         set_terminal_profile_setting(profile, "BackgroundAlphaInactive", "real", "0.5")
+        set_terminal_profile_setting(profile, "BackgroundSettingsForInactiveWindows", "bool", "true")
 
     print("Attempting to reload settings by restarting the Dock, Finder, and WindowManager...")
+    run_command(['killall', 'Terminal'])
     run_command(['killall', 'Dock'])
     run_command(['killall', 'Finder'])
     run_command(['killall', 'WindowManager'])
