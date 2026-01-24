@@ -247,6 +247,41 @@ class TestWtsIntegration(unittest.TestCase):
             self.assertIn(f"new-session -d -s {expected_session_name}", content)
             self.assertIn(f"-c {self.test_dir}", content)
 
+    def test_wts_attach(self):
+        """Tests 'wts --attach'."""
+        # Create a fake tmux script
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux_attach.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n')
+            f.write('  exit 0\n') # Simulate session exists
+            f.write('fi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+        
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+        
+        # Run wts --attach
+        res = subprocess.run([sys.executable, WTS_SCRIPT, '--attach'], cwd=self.test_dir, env=env, capture_output=True, text=True)
+        if res.returncode != 0:
+            print(f"STDOUT: {res.stdout}")
+            print(f"STDERR: {res.stderr}")
+            self.assertEqual(res.returncode, 0, "wts --attach failed")
+        
+        # Verify tmux called with attach-session and correct name
+        current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=self.test_dir, capture_output=True, text=True, check=True).stdout.strip()
+        repo_name = os.path.basename(self.test_dir)
+        expected_session_name = f"{repo_name}-{current_branch}"
+
+        with open(tmux_log, 'r') as f:
+            content = f.read()
+            self.assertIn(f"attach-session -t {expected_session_name}", content)
+
 if __name__ == '__main__':
     # Verify dependencies
     if shutil.which('tmux') is None:
