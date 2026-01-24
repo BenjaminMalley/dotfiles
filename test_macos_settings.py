@@ -19,6 +19,12 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.swipescrolldirection', '-bool', 'false'])
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.dock', 'autohide', '-bool', 'true'])
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.finder', 'AppleShowAllFiles', '-bool', 'true'])
+
+        # Check sound settings
+        mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.feedback', '-int', '0'])
+        mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'])
+        mock_run_command.assert_any_call(['osascript', '-e', 'set volume alert volume 0'])
+
         mock_run_command.assert_any_call(['killall', 'Dock'])
         mock_run_command.assert_any_call(['killall', 'Finder'])
         mock_run_command.assert_any_call(['killall', 'WindowManager'])
