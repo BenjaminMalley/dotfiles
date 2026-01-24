@@ -1,6 +1,7 @@
 
 import subprocess
 import platform
+import os
 
 def run_command(command):
     """Runs a command and checks for errors."""
@@ -28,6 +29,17 @@ def set_shortcut(action_id, key_code, modifiers):
     </dict>
     """
     run_command(['/usr/bin/defaults', 'write', 'com.apple.symbolichotkeys', 'AppleSymbolicHotKeys', '-dict-add', str(action_id), shortcut_plist])
+
+
+def set_terminal_profile_setting(profile, key, type, value):
+    """Sets a setting in a Terminal profile using PlistBuddy."""
+    plist = '~/Library/Preferences/com.apple.Terminal.plist'
+    # Try to set it first
+    try:
+        subprocess.run(['/usr/libexec/PlistBuddy', '-c', f"Set :'Window Settings':{profile}:{key} {value}", os.path.expanduser(plist)], check=True, capture_output=True)
+    except subprocess.CalledProcessError:
+        # If set fails, it probably doesn't exist, so try to add it
+        run_command(['/usr/libexec/PlistBuddy', '-c', f"Add :'Window Settings':{profile}:{key} {type} {value}", os.path.expanduser(plist)])
 
 
 def set_macos_preferences():
@@ -86,6 +98,11 @@ def set_macos_preferences():
     # --- Terminal ---
     run_command(['defaults', 'write', 'com.apple.Terminal', 'VisualBell', '-bool', 'false'])
     run_command(['defaults', 'write', 'com.apple.Terminal', 'AudibleBell', '-bool', 'false'])
+
+    # Close window on exit and set transparency for unfocused windows
+    for profile in ["Basic", "Pro"]:
+        set_terminal_profile_setting(profile, "shellExitAction", "integer", "1")
+        set_terminal_profile_setting(profile, "BackgroundAlphaInactive", "real", "0.5")
 
     print("Attempting to reload settings by restarting the Dock, Finder, and WindowManager...")
     run_command(['killall', 'Dock'])
