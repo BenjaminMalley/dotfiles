@@ -89,7 +89,7 @@ def main():
         cleanup_session()
         return
 
-    if not args.name:
+    if not args.name and not args.no_worktree:
         parser.print_help()
         sys.exit(1)
 
@@ -110,6 +110,9 @@ def main():
         repo_toplevel_result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True)
         repo_toplevel = repo_toplevel_result.stdout.strip()
         repo_name = os.path.basename(repo_toplevel)
+
+        if not branch_name:
+            branch_name = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
 
         session_name = f"{repo_name}-{branch_name}"
 
@@ -149,6 +152,8 @@ def main():
                 run_command(['git', 'worktree', 'add', str(worktree_path), branch_name])
     else:
         # Not in a git repo
+        if not branch_name:
+            branch_name = os.path.basename(os.getcwd())
         session_name = branch_name
         target_dir = Path.cwd()
         print(f"Not in a git repository. Using current directory {target_dir}")
