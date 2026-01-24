@@ -77,6 +77,12 @@ def set_macos_preferences():
     run_command(['defaults', 'write', 'com.apple.finder', 'ShowStatusBar', '-bool', 'true'])
     run_command(['defaults', 'write', 'com.apple.finder', 'ShowPathbar', '-bool', 'true'])
 
+    # --- Sound ---
+    run_command(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.feedback', '-int', '0'])
+    run_command(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'])
+    # Also use osascript to set alert volume to 0 immediately
+    run_command(['osascript', '-e', 'set volume alert volume 0'])
+
     # --- Terminal ---
     run_command(['defaults', 'write', 'com.apple.Terminal', 'VisualBell', '-bool', 'false'])
     run_command(['defaults', 'write', 'com.apple.Terminal', 'AudibleBell', '-bool', 'false'])
