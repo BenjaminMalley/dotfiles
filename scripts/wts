@@ -80,7 +80,7 @@ def main():
     """Main function to create worktree and tmux session."""
     parser = argparse.ArgumentParser(description="Manage git worktrees and tmux sessions.")
     parser.add_argument("name", nargs="?", help="Branch name or session name")
-    parser.add_argument("--done", action="store_true", help="Clean up current session")
+    parser.add_argument("--done", "-d", action="store_true", help="Clean up current session")
     parser.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
     
     args = parser.parse_args()
