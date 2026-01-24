@@ -22,14 +22,14 @@
   "tools": {
     "approvalMode": "auto_edit",
     "allowed": [
-      "run_shell_command(git *)",
-      "run_shell_command(gh *)",
-      "run_shell_command(scripts/*)",
-      "run_shell_command(./scripts/*)",
-      "run_shell_command(notify *)",
-      "run_shell_command(wts *)",
-      "run_shell_command(dotfiles *)",
-      "run_shell_command(inbox-manager *)"
+      "run_shell_command(*git *)",
+      "run_shell_command(*gh *)",
+      "run_shell_command(*scripts/*)",
+      "run_shell_command(*./scripts/*)",
+      "run_shell_command(*notify *)",
+      "run_shell_command(*wts *)",
+      "run_shell_command(*dotfiles *)",
+      "run_shell_command(*inbox-manager *)"
     ]
   }
 }
