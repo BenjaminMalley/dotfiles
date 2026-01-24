@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import time
 import sys
+import tempfile
 from unittest.mock import patch
 from pathlib import Path
 import importlib.util
@@ -36,7 +37,11 @@ class TestWtsIntegration(unittest.TestCase):
         subprocess.run(['git', 'commit', '--allow-empty', '-m', 'Initial commit'], cwd=self.test_dir, check=True, stdout=subprocess.DEVNULL)
 
         # Create worktree for the cleanup test
-        self.worktree_path = os.path.join(self.test_dir, 'feature-branch')
+        # We need to simulate the folder structure that wts expects: ~/worktrees/<repo>/<branch>
+        repo_name = os.path.basename(self.test_dir)
+        self.worktree_path = os.path.join(self.test_dir, 'worktrees', repo_name, 'feature-branch')
+        # Parent dir must exist
+        os.makedirs(os.path.dirname(self.worktree_path), exist_ok=True)
         subprocess.run(['git', 'worktree', 'add', self.worktree_path, '-b', 'feature-branch'], cwd=self.test_dir, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         self.session_name = "test-wts-session"
@@ -100,7 +105,8 @@ class TestWtsIntegration(unittest.TestCase):
     def test_wts_done(self):
         # Start tmux session running the wts command directly
         # This avoids shell startup scripts (like airchat) interfering
-        cmd_str = f"'{sys.executable}' '{WTS_SCRIPT}' --done"
+        # We must set HOME so wts knows where ~/worktrees is (checking against our temp dir)
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
         
         # Start the session. It runs the command and stays open until command finishes (or is killed)
         self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, cmd_str, check=True)
@@ -118,6 +124,76 @@ class TestWtsIntegration(unittest.TestCase):
 
         # Check if worktree is gone
         self.assertFalse(os.path.exists(self.worktree_path), "Worktree directory should have been removed")
+
+    def test_wts_create_no_worktree(self):
+        """Tests creation of session without worktree (inside repo)."""
+        branch_name = "fix-bug"
+        
+        # Create a fake tmux script
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux_nw.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n')
+            f.write('  exit 1\n')
+            f.write('fi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+        
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+        
+        # Run wts with --no-worktree
+        # Note: Depending on implementation, flag might need to be before or after name
+        # We will assume argparse handles both, but let's put it after for now or check usage
+        subprocess.run([sys.executable, WTS_SCRIPT, branch_name, '--no-worktree'], cwd=self.test_dir, env=env, check=True)
+        
+        # Verify NO worktree was created
+        repo_name = os.path.basename(self.test_dir)
+        unexpected_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
+        self.assertFalse(os.path.exists(unexpected_path), "Worktree should NOT be created")
+        
+        # Verify tmux called with correct session name and CWD (should be repo root)
+        with open(tmux_log, 'r') as f:
+            content = f.read()
+            self.assertIn(f"new-session -d -s {repo_name}-{branch_name}", content)
+            # It should set CWD to self.test_dir
+            self.assertIn(f"-c {self.test_dir}", content)
+
+    def test_wts_outside_repo(self):
+        """Tests creation of session outside of a git repo."""
+        # Create a temp dir outside of the current git repo
+        with tempfile.TemporaryDirectory() as temp_dir:
+            session_name = "random-session"
+            
+            # Fake tmux setup
+            fake_tmux_dir = os.path.join(temp_dir, 'bin')
+            os.makedirs(fake_tmux_dir, exist_ok=True)
+            fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+            tmux_log = os.path.join(temp_dir, 'tmux_og.log')
+            with open(fake_tmux, 'w') as f:
+                f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+                f.write('if echo "$@" | grep -q "has-session"; then\n')
+                f.write('  exit 1\n')
+                f.write('fi\n')
+                f.write('exit 0\n')
+            os.chmod(fake_tmux, 0o755)
+            
+            env = os.environ.copy()
+            env['HOME'] = temp_dir
+            env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+            
+            # Run wts outside repo
+            subprocess.run([sys.executable, WTS_SCRIPT, session_name], cwd=temp_dir, env=env, check=True)
+            
+            # Verify tmux called with simple session name
+            with open(tmux_log, 'r') as f:
+                content = f.read()
+                self.assertIn(f"new-session -d -s {session_name}", content)
+                self.assertIn(f"-c {os.path.realpath(temp_dir)}", content)
 
 if __name__ == '__main__':
     # Verify dependencies

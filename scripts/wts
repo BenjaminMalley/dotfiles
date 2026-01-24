@@ -3,6 +3,7 @@
 import subprocess
 import os
 import sys
+import argparse
 from pathlib import Path
 
 def run_command(command, check=True):
@@ -27,24 +28,44 @@ def cleanup_session():
         print("Error: Must be run inside a tmux session.", file=sys.stderr)
         sys.exit(1)
 
-    # Check for uncommitted changes
-    status_result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=True)
-    if status_result.stdout.strip():
-        print("Error: Uncommitted changes or untracked files present. Please commit or stash them first.", file=sys.stderr)
-        sys.exit(1)
+    # Check for uncommitted changes (only if in a git repo)
+    try:
+        subprocess.run(['git', 'rev-parse', '--is-inside-work-tree'], check=True, capture_output=True)
+        in_git = True
+    except subprocess.CalledProcessError:
+        in_git = False
+
+    if in_git:
+        status_result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=True)
+        if status_result.stdout.strip():
+            print("Error: Uncommitted changes or untracked files present. Please commit or stash them first.", file=sys.stderr)
+            sys.exit(1)
+        
+        # Get worktree path
+        worktree_path = Path(subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True).stdout.strip())
+    else:
+        worktree_path = None
 
     # Get current session name
     session_name = subprocess.run(['tmux', 'display-message', '-p', '#S'], capture_output=True, text=True, check=True).stdout.strip()
 
-    # Get worktree path
-    worktree_path = Path(subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True).stdout.strip())
-    
-    print(f"Cleaning up session '{session_name}' and worktree '{worktree_path}'...")
-    
-    # Construct the cleanup command
-    # We use run-shell -b to run in background, ensuring it survives the session death
-    # We remove the worktree first, then kill the session.
-    cleanup_cmd = f"git worktree remove '{worktree_path}' && tmux kill-session -t '{session_name}'"
+    # Determine if we should remove the worktree
+    should_remove_worktree = False
+    if worktree_path:
+        home_worktrees = Path.home() / "worktrees"
+        try:
+            # Check if the worktree path is a subdirectory of ~/worktrees
+            worktree_path.relative_to(home_worktrees)
+            should_remove_worktree = True
+        except ValueError:
+            should_remove_worktree = False
+
+    if should_remove_worktree:
+        print(f"Cleaning up session '{session_name}' and worktree '{worktree_path}'...")
+        cleanup_cmd = f"git worktree remove '{worktree_path}' && tmux kill-session -t '{session_name}'"
+    else:
+        print(f"Cleaning up session '{session_name}'...")
+        cleanup_cmd = f"tmux kill-session -t '{session_name}'"
 
     # Switch client first
     # Try switching to last session, otherwise detach
@@ -57,56 +78,80 @@ def cleanup_session():
 
 def main():
     """Main function to create worktree and tmux session."""
-    # Check if we are in a git repository
-    try:
-        subprocess.run(['git', 'rev-parse', '--is-inside-work-tree'], check=True, capture_output=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print("Error: Not in a git repository.", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Manage git worktrees and tmux sessions.")
+    parser.add_argument("name", nargs="?", help="Branch name or session name")
+    parser.add_argument("--done", action="store_true", help="Clean up current session")
+    parser.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
+    
+    args = parser.parse_args()
 
-    # Get branch name from argument
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <branch-name> or --done", file=sys.stderr)
-        sys.exit(1)
-
-    if sys.argv[1] == "--done":
+    if args.done:
         cleanup_session()
         return
 
-    branch_name = sys.argv[1]
+    if not args.name:
+        parser.print_usage()
+        sys.exit(1)
 
-    # Get repository name
-    repo_toplevel_result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True)
-    repo_toplevel = repo_toplevel_result.stdout.strip()
-    repo_name = os.path.basename(repo_toplevel)
+    branch_name = args.name
 
-    # Define paths and names
-    home_dir = Path.home()
-    worktree_path = home_dir / "worktrees" / repo_name / branch_name
-    session_name = f"{repo_name}-{branch_name}"
+    # Check if we are in a git repository
+    try:
+        subprocess.run(['git', 'rev-parse', '--is-inside-work-tree'], check=True, capture_output=True)
+        in_git = True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        in_git = False
 
-    # Create worktree if it doesn't exist
-    if worktree_path.exists():
-        print(f"Worktree already exists at {worktree_path}")
+    target_dir = None
+    session_name = None
+
+    if in_git:
+        # Get repository name
+        repo_toplevel_result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True)
+        repo_toplevel = repo_toplevel_result.stdout.strip()
+        repo_name = os.path.basename(repo_toplevel)
+
+        session_name = f"{repo_name}-{branch_name}"
+
+        if args.no_worktree:
+            target_dir = Path(repo_toplevel)
+            print(f"Using existing repository at {target_dir}")
+        else:
+            # Define paths and names
+            home_dir = Path.home()
+            worktree_path = home_dir / "worktrees" / repo_name / branch_name
+            target_dir = worktree_path
+
+            # Create worktree if it doesn't exist
+            if worktree_path.exists():
+                print(f"Worktree already exists at {worktree_path}")
+            else:
+                print(f"Creating worktree for branch '{branch_name}' at {worktree_path}...")
+                worktree_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                branch_exists_result = subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch_name}'])
+                if branch_exists_result.returncode != 0:
+                    try:
+                        # Use a simpler prompt or allow handling from args in future
+                        # For now, sticking to input() but being mindful it might hang in tests if not mocked
+                        # In tests, we should ensure branches exist before calling this if possible,
+                        # or mock input.
+                        create_branch = input(f"Branch '{branch_name}' does not exist. Create it? (y/n) ")
+                        if create_branch.lower() == 'y':
+                            run_command(['git', 'branch', branch_name])
+                        else:
+                            print("Aborting.")
+                            sys.exit(0)
+                    except (EOFError, KeyboardInterrupt):
+                        print("\nAborting.")
+                        sys.exit(0)
+
+                run_command(['git', 'worktree', 'add', str(worktree_path), branch_name])
     else:
-        print(f"Creating worktree for branch '{branch_name}' at {worktree_path}...")
-        worktree_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        branch_exists_result = subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch_name}'])
-        if branch_exists_result.returncode != 0:
-            try:
-                create_branch = input(f"Branch '{branch_name}' does not exist. Create it? (y/n) ")
-                if create_branch.lower() == 'y':
-                    run_command(['git', 'branch', branch_name])
-                else:
-                    print("Aborting.")
-                    sys.exit(0)
-            except (EOFError, KeyboardInterrupt):
-                print("\nAborting.")
-                sys.exit(0)
-
-
-        run_command(['git', 'worktree', 'add', str(worktree_path), branch_name])
+        # Not in a git repo
+        session_name = branch_name
+        target_dir = Path.cwd()
+        print(f"Not in a git repository. Using current directory {target_dir}")
 
     # Check if tmux session exists
     session_exists_result = subprocess.run(['tmux', 'has-session', '-t', f'={session_name}'], capture_output=True)
@@ -115,7 +160,7 @@ def main():
         print(f"Session '{session_name}' already exists.")
     else:
         print(f"Creating new tmux session '{session_name}'...")
-        run_command(['tmux', 'new-session', '-d', '-s', session_name, '-c', str(worktree_path)])
+        run_command(['tmux', 'new-session', '-d', '-s', session_name, '-c', str(target_dir)])
 
     # If inside tmux, switch to the new session, otherwise attach
     if 'TMUX' in os.environ:
