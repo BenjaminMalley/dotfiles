@@ -90,7 +90,7 @@ def main():
         return
 
     if not args.name:
-        parser.print_usage()
+        parser.print_help()
         sys.exit(1)
 
     branch_name = args.name
