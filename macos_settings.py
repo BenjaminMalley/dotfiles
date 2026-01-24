@@ -99,6 +99,9 @@ def set_macos_preferences():
     run_command(['defaults', 'write', 'com.apple.Terminal', 'VisualBell', '-bool', 'false'])
     run_command(['defaults', 'write', 'com.apple.Terminal', 'AudibleBell', '-bool', 'false'])
 
+    # --- GH CLI ---
+    run_command(['gh', 'config', 'set', 'prompt', 'disabled'])
+
     # Close window on exit and set transparency for unfocused windows
     for profile in ["Basic", "Pro"]:
         set_terminal_profile_setting(profile, "shellExitAction", "integer", "1")
