@@ -214,6 +214,39 @@ class TestWtsIntegration(unittest.TestCase):
                 self.assertIn(f"new-session -d -s {session_name}", content)
                 self.assertIn(f"-c {os.path.realpath(temp_dir)}", content)
 
+    def test_wts_no_worktree_no_name(self):
+        """Tests 'wts -n' without providing a name."""
+        # Create a fake tmux script
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux_nw_nn.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n')
+            f.write('  exit 1\n')
+            f.write('fi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+        
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+        
+        # Get current branch name for verification
+        current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=self.test_dir, capture_output=True, text=True, check=True).stdout.strip()
+        repo_name = os.path.basename(self.test_dir)
+        expected_session_name = f"{repo_name}-{current_branch}"
+
+        # Run wts with -n but NO name
+        subprocess.run([sys.executable, WTS_SCRIPT, '-n'], cwd=self.test_dir, env=env, check=True)
+        
+        # Verify tmux called with correct session name (should default to current branch)
+        with open(tmux_log, 'r') as f:
+            content = f.read()
+            self.assertIn(f"new-session -d -s {expected_session_name}", content)
+            self.assertIn(f"-c {self.test_dir}", content)
+
 if __name__ == '__main__':
     # Verify dependencies
     if shutil.which('tmux') is None:
