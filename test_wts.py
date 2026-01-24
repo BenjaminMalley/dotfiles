@@ -125,6 +125,25 @@ class TestWtsIntegration(unittest.TestCase):
         # Check if worktree is gone
         self.assertFalse(os.path.exists(self.worktree_path), "Worktree directory should have been removed")
 
+    def test_wts_done_alias(self):
+        """Tests the -d alias for cleanup."""
+        # Start tmux session running the wts command with -d
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' -d"
+        
+        # Start the session
+        self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, cmd_str, check=True)
+
+        # Wait for cleanup
+        max_retries = 20
+        for _ in range(max_retries):
+            ret = self.run_tmux('has-session', '-t', self.session_name, stderr=subprocess.DEVNULL)
+            if ret.returncode != 0:
+                break
+            time.sleep(0.5)
+        
+        self.assertNotEqual(ret.returncode, 0, "Tmux session should have been killed with -d")
+        self.assertFalse(os.path.exists(self.worktree_path), "Worktree directory should have been removed with -d")
+
     def test_wts_create_no_worktree(self):
         """Tests creation of session without worktree (inside repo)."""
         branch_name = "fix-bug"
