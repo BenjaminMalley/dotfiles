@@ -25,6 +25,10 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'])
         mock_run_command.assert_any_call(['osascript', '-e', 'set volume alert volume 0'])
 
+        # Terminal profile settings (checking a few)
+        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Add :'Window Settings':Basic:shellExitAction integer 1", unittest.mock.ANY])
+        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Add :'Window Settings':Pro:BackgroundAlphaInactive real 0.5", unittest.mock.ANY])
+
         mock_run_command.assert_any_call(['killall', 'Dock'])
         mock_run_command.assert_any_call(['killall', 'Finder'])
         mock_run_command.assert_any_call(['killall', 'WindowManager'])
