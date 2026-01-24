@@ -8,7 +8,7 @@ You should always aim to work in "YOLO mode". This means you should:
 # Project Utilities
 
 ## Notifications
-You have access to a system notification tool located at `scripts/notify`.
+You have access to a system notification tool `notify`.
 You should use this tool to alert the user whenever:
 1. You have completed a significant task.
 2. You are paused and waiting for user input.
