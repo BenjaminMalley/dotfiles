@@ -12,15 +12,8 @@ export VISUAL=vim
 bindkey -M vicmd '/' history-incremental-search-backward
 
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-    if git rev-parse --is-inside-work-tree &>/dev/null; then
-        REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
-        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-        SESSION_NAME="${REPO_NAME}-${BRANCH_NAME}"
-    else
-        SESSION_NAME=$(basename "$PWD")
-    fi
-    # Try to attach to the session, suppressing errors if it doesn't exist.
-    tmux attach-session -t "$SESSION_NAME" &>/dev/null || true
+    # Try to attach to the session if it exists (naming logic is inside wts)
+    wts --attach &>/dev/null
 fi
 
 # Source local configuration
