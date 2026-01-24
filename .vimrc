@@ -25,3 +25,8 @@ set showcmd
 
 " A modern color scheme (if your terminal supports it)
 colorscheme desert
+
+" Kill the bells
+set noerrorbells
+set novisualbell
+set t_vb=

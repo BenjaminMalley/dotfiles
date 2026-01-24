@@ -21,3 +21,6 @@ fi
 if [ -f ~/.zshrc.local ]; then
   . ~/.zshrc.local
 fi
+
+# Disable audible beep
+unsetopt BEEP
