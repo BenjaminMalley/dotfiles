@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Read stdin to get the hook payload
+input=$(cat)
+
+# Use python3 to parse the JSON and return:
+# Line 1: 0 or 1 (should notify)
+# Line 2: The project/directory name (if notify=1)
+output=$(echo "$input" | python3 -c "
+import sys, json, os
+
+try:
+    data = json.load(sys.stdin)
+    ntype = data.get('notification_type', '')
+    event = data.get('hook_event_name', '')
+    cwd = data.get('cwd', '')
+    
+    # Get just the directory name (e.g., 'dotfiles')
+    project_name = os.path.basename(cwd) if cwd else 'Gemini'
+    
+    should_notify = False
+    
+    # 1. Notify on explicit system notifications
+    if event == 'Notification' and ntype in ['ToolPermission', 'InputRequired', 'IdleAlert']:
+        should_notify = True
+
+    # 2. Notify when the agent is done
+    elif event == 'AfterAgent':
+        should_notify = True
+        
+    print('1' if should_notify else '0')
+    print(project_name)
+
+except Exception:
+    print('0')
+    print('Gemini')
+")
+
+should_notify=$(echo "$output" | sed -n '1p')
+project_name=$(echo "$output" | sed -n '2p')
+
+if [ "$should_notify" == "1" ]; then
+    SCRIPT_DIR=$(dirname "$0")
+    # Title: Gemini (dotfiles)
+    # Message: Input Required
+    "$SCRIPT_DIR/notify" "Input Required" "Gemini ($project_name)"
+fi
+
+# Always return success JSON
+echo "{}"
+exit 0

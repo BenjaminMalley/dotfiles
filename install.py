@@ -2,6 +2,7 @@ import subprocess
 import platform
 import os
 import shutil
+import json
 from macos_settings import set_macos_preferences
 
 
@@ -56,6 +57,74 @@ def symlink_agent_files():
         
         os.symlink(source_path, destination_path)
         print(f"{filename} symlinked to {destination_path}")
+
+
+def symlink_scripts():
+    """Symlinks the scripts directory to ~/.gemini/scripts and ~/.claude/scripts."""
+    home_dir = os.environ.get('HOME', '')
+    scripts_dir = os.path.join(os.path.dirname(__file__), 'scripts')
+    
+    if not os.path.isdir(scripts_dir):
+        print(f"Warning: {scripts_dir} not found. Skipping scripts symlinking.")
+        return
+
+    for tool in ['.gemini', '.claude']:
+        tool_scripts_dir = os.path.join(home_dir, tool, 'scripts')
+        os.makedirs(os.path.dirname(tool_scripts_dir), exist_ok=True)
+
+        if os.path.islink(tool_scripts_dir):
+            os.remove(tool_scripts_dir)
+        elif os.path.exists(tool_scripts_dir):
+            print(f"Warning: {tool_scripts_dir} exists and is not a symlink. Backing it up.")
+            shutil.move(tool_scripts_dir, f"{tool_scripts_dir}.bak")
+        
+        os.symlink(scripts_dir, tool_scripts_dir)
+        print(f"scripts symlinked to {tool_scripts_dir}")
+
+
+def install_claude_settings():
+    """Installs or updates Claude Code settings by merging with existing config."""
+    home_dir = os.environ.get('HOME', '')
+    source_path = os.path.join(os.path.dirname(__file__), 'claude-settings.json')
+    destination_path = os.path.join(home_dir, '.claude', 'settings.json')
+    
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+
+    # Read source (our new notification config)
+    try:
+        with open(source_path, 'r') as f:
+            new_settings = json.load(f)
+    except Exception as e:
+        print(f"Error reading source settings: {e}")
+        return
+
+    # Read destination (existing user config)
+    existing_settings = {}
+    if os.path.exists(destination_path) and not os.path.islink(destination_path):
+        try:
+            with open(destination_path, 'r') as f:
+                existing_settings = json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not read existing Claude settings: {e}. Overwriting.")
+
+    # Merge hooks
+    if 'hooks' not in existing_settings:
+        existing_settings['hooks'] = {}
+    
+    # We want to ensure our Notification hook is present.
+    # We'll overwrite the 'Notification' key specifically for the notification hook matchers,
+    # but try to preserve others if possible. For simplicity/reliability, we'll enforce our notification hook.
+    new_hooks = new_settings.get('hooks', {})
+    for event, configs in new_hooks.items():
+        existing_settings['hooks'][event] = configs
+
+    # Write back
+    try:
+        with open(destination_path, 'w') as f:
+            json.dump(existing_settings, f, indent=2)
+        print(f"Updated Claude settings at {destination_path}")
+    except Exception as e:
+        print(f"Error writing Claude settings: {e}")
 
 
 def install_dotfiles():
@@ -123,7 +192,9 @@ def install_dotfiles():
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
     symlink_file('AGENT.md', os.path.join('.claude', 'CLAUDE.md'))
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
+    install_claude_settings()
     symlink_agent_files()
+    symlink_scripts()
 
     # Create empty .tmux.conf.local if it doesn't exist
     home_dir = os.environ.get('HOME', '')
