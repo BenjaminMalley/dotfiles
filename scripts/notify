@@ -4,7 +4,7 @@
 SCRIPT_DIR=$(dirname "$0")
 
 # Default values
-TITLE="Task Complete"
+TITLE="Gemini"
 MESSAGE="The command has finished."
 
 # Override with arguments if provided
@@ -25,6 +25,7 @@ fi
 
 # Send notification on macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Fallback to osascript as it seems more reliable for this user
     osascript -e "display notification \"$MESSAGE\" with title \"$TITLE\" sound name \"Glass\""
 else
     # Fallback for other systems

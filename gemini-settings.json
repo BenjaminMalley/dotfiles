@@ -24,5 +24,29 @@
     "allowed": [
       "run_shell_command(*)"
     ]
+  },
+  "hooks": {
+    "enabled": true,
+    "notifications": true,
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.gemini/scripts/gemini-hook-notify"
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.gemini/scripts/gemini-hook-notify"
+          }
+        ]
+      }
+    ]
   }
 }
