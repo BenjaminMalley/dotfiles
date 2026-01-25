@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Read stdin to get the hook payload
+input=$(cat)
+
+# Use python3 to parse the JSON and decide whether to notify
+# Note: Claude's payload structure might differ slightly from Gemini's
+# but we aim to extract 'cwd' if present.
+output=$(echo "$input" | python3 -c "
+import sys, json, os
+
+try:
+    data = json.load(sys.stdin)
+    # Claude usually provides context in the top level or 'context' key
+    cwd = data.get('cwd') or data.get('context', {}).get('cwd', '')
+    
+    project_name = os.path.basename(cwd) if cwd else 'Claude'
+    
+    # For Claude, we trigger this script specifically on notification events
+    # so we can assume we should notify if the script is called.
+    print('1')
+    print(project_name)
+
+except Exception:
+    print('1')
+    print('Claude')
+")
+
+should_notify=$(echo "$output" | sed -n '1p')
+project_name=$(echo "$output" | sed -n '2p')
+
+if [ "$should_notify" == "1" ]; then
+    SCRIPT_DIR=$(dirname "$0")
+    "$SCRIPT_DIR/notify" "Input Required" "Claude ($project_name)"
+fi
+
+# Always return success JSON
+echo "{}"
+exit 0
