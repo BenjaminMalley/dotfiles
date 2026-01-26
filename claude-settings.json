@@ -1,8 +1,29 @@
 {
   "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/claude-hook-notify"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
-        "matcher": "permission_prompt|idle_prompt",
+        "matcher": "permission_prompt|idle_prompt|elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/claude-hook-notify"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
         "hooks": [
           {
             "type": "command",
