@@ -158,8 +158,8 @@ def install_dotfiles():
         open(tmux_conf_local, 'a').close()
         print(f"Created empty {tmux_conf_local}")
 
-    print("Killing tmux server to apply changes to .tmux.conf...")
-    run_command(['tmux', 'kill-server'], check=False)
+    print("Reloading tmux configuration...")
+    run_command(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
 
 
 if __name__ == '__main__':
