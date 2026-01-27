@@ -16,8 +16,10 @@ if [ -n "$2" ]; then
     TITLE="$2"
 fi
 
+CONTEXT="$3"
+
 # Log notification to history
-"$SCRIPT_DIR/inbox-manager" log "$MESSAGE" "$TITLE"
+"$SCRIPT_DIR/inbox-manager" log "$MESSAGE" "$TITLE" "$CONTEXT"
 
 # Add to Inbox if inside tmux
 if [ -n "$TMUX" ]; then
