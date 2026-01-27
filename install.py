@@ -2,6 +2,7 @@ import subprocess
 import platform
 import os
 import shutil
+import argparse
 from macos_settings import set_macos_preferences
 
 
@@ -81,7 +82,7 @@ def symlink_scripts():
         print(f"scripts symlinked to {tool_scripts_dir}")
 
 
-def install_dotfiles():
+def install_dotfiles(args):
     """Installs dotfiles and software."""
     print("Starting bootstrap process...")
 
@@ -104,7 +105,7 @@ def install_dotfiles():
             print("No Brewfile found. Skipping software installation.")
 
         brewfile_opt = os.path.join(script_dir, 'Brewfile.opt')
-        if os.path.exists(brewfile_opt):
+        if os.path.exists(brewfile_opt) and not args.skip_optional:
             print("Checking for optional software in Brewfile.opt...")
             with open(brewfile_opt, 'r') as f:
                 for line in f:
@@ -120,7 +121,11 @@ def install_dotfiles():
                     command, package = parts
                     package = package.strip('"')
 
-                    response = input(f"Do you want to install optional software '{package}'? (y/n) ")
+                    if args.yes:
+                        response = 'y'
+                    else:
+                        response = input(f"Do you want to install optional software '{package}'? (y/n) ")
+                    
                     if response.lower() == 'y':
                         print(f"Installing {package}...")
                         if command == 'cask':
@@ -130,7 +135,10 @@ def install_dotfiles():
                     else:
                         print(f"Skipping {package}.")
         else:
-            print("No Brewfile.opt found. Skipping optional software installation.")
+            if args.skip_optional:
+                print("Skipping optional software as requested.")
+            else:
+                print("No Brewfile.opt found. Skipping optional software installation.")
 
         set_macos_preferences()
     else:
@@ -157,8 +165,15 @@ def install_dotfiles():
         print(f"Created empty {tmux_conf_local}")
 
     print("Reloading tmux configuration...")
-    run_command(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
+    # Explicitly unset deprecated hooks and clear status-right to avoid ghosting from previous versions
+    tmux_cleanup = 'tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""'
+    run_command(['/bin/bash', '-c', f'if tmux info &>/dev/null; then {tmux_cleanup}; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
 
 
 if __name__ == '__main__':
-    install_dotfiles()
+    parser = argparse.ArgumentParser(description="Install dotfiles and software.")
+    parser.add_argument('--skip-optional', action='store_true', help="Skip optional software installation.")
+    parser.add_argument('--yes', '-y', action='store_true', help="Answer yes to all prompts.")
+    args = parser.parse_args()
+    
+    install_dotfiles(args)

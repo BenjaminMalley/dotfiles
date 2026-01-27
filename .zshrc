@@ -21,5 +21,29 @@ if [ -f ~/.zshrc.local ]; then
   . ~/.zshrc.local
 fi
 
+# Git helper: switch to the main/master branch
+gotrunk() {
+  local trunk=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+  if [[ -z "$trunk" ]]; then
+    if git show-ref --verify --quiet refs/heads/main; then trunk="main"
+    elif git show-ref --verify --quiet refs/heads/master; then trunk="master"
+    fi
+  fi
+
+  if [[ -n "$trunk" ]]; then
+    git checkout "$trunk"
+  else
+    echo "Could not find trunk branch"
+    return 1
+  fi
+}
+
+# Fix SSH Agent in tmux: symlink the dynamic socket to a static path
+if [[ -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$HOME/.ssh/ssh_auth_sock" ]]; then
+  mkdir -p ~/.ssh
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
+export SSH_AUTH_SOCK="$HOME/.ssh/ssh_auth_sock"
+
 # Disable audible beep
 unsetopt BEEP
