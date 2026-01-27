@@ -18,6 +18,10 @@ try:
     # Get just the directory name (e.g., 'dotfiles')
     project_name = os.path.basename(cwd) if cwd else 'Gemini'
     
+    msg = ntype if ntype else 'Agent Finished'
+    if event == 'Notification' and ntype == 'InputRequired':
+        msg = 'Input Required'
+    
     should_notify = False
     
     # 1. Notify on explicit system notifications
@@ -30,20 +34,26 @@ try:
         
     print('1' if should_notify else '0')
     print(project_name)
+    print(msg)
+    print(cwd)
 
 except Exception:
     print('0')
     print('Gemini')
+    print('Task Finished')
+    print('')
 ")
 
 should_notify=$(echo "$output" | sed -n '1p')
 project_name=$(echo "$output" | sed -n '2p')
+message=$(echo "$output" | sed -n '3p')
+full_cwd=$(echo "$output" | sed -n '4p')
 
 if [ "$should_notify" == "1" ]; then
     SCRIPT_DIR=$(dirname "$0")
     # Title: Gemini (dotfiles)
-    # Message: Input Required
-    "$SCRIPT_DIR/notify" "Input Required" "Gemini ($project_name)"
+    # Message: ToolPermission | /path/to/project
+    "$SCRIPT_DIR/notify" "$message" "Gemini ($project_name)" "$full_cwd"
 fi
 
 # Always return success JSON

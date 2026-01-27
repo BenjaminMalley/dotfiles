@@ -1,0 +1,8 @@
+{LOG_PATH} {
+    weekly
+    rotate 5
+    missingok
+    notifempty
+    nocreate
+    nocompress
+}
