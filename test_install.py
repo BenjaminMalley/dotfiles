@@ -71,7 +71,10 @@ class TestInstallScript(unittest.TestCase):
                     expected_optional_calls.append(call(['brew', 'install', package]))
 
         # Act
-        install.install_dotfiles()
+        args = unittest.mock.Mock()
+        args.skip_optional = False
+        args.yes = False
+        install.install_dotfiles(args)
 
         # Assert
         mock_run_command.assert_any_call(['brew', 'update'])
@@ -81,7 +84,8 @@ class TestInstallScript(unittest.TestCase):
         for expected_call in expected_optional_calls:
             mock_run_command.assert_any_call(*expected_call.args, **expected_call.kwargs)
 
-        mock_run_command.assert_any_call(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
+        expected_tmux_reload = 'if tmux info &>/dev/null; then tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'
+        mock_run_command.assert_any_call(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
@@ -105,10 +109,14 @@ class TestInstallScript(unittest.TestCase):
         agent_files = os.listdir(agents_dir)
 
         # Act
-        install.install_dotfiles()
+        args = unittest.mock.Mock()
+        args.skip_optional = False
+        args.yes = False
+        install.install_dotfiles(args)
 
         # Assert
-        mock_run_command.assert_called_once_with(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
+        expected_tmux_reload = 'if tmux info &>/dev/null; then tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'
+        mock_run_command.assert_called_once_with(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
 
