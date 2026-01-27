@@ -81,7 +81,7 @@ class TestInstallScript(unittest.TestCase):
         for expected_call in expected_optional_calls:
             mock_run_command.assert_any_call(*expected_call.args, **expected_call.kwargs)
 
-        mock_run_command.assert_any_call(['tmux', 'kill-server'], check=False)
+        mock_run_command.assert_any_call(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
@@ -108,7 +108,7 @@ class TestInstallScript(unittest.TestCase):
         install.install_dotfiles()
 
         # Assert
-        mock_run_command.assert_called_once_with(['tmux', 'kill-server'], check=False)
+        mock_run_command.assert_called_once_with(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
 
