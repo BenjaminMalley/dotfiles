@@ -1,0 +1,3 @@
+# newsyslog configuration for inbox-manager
+# logfilename          mode count size when  flags
+{LOG_PATH}             644  5     *    $W0   -

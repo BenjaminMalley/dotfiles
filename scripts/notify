@@ -16,6 +16,9 @@ if [ -n "$2" ]; then
     TITLE="$2"
 fi
 
+# Log notification to history
+"$SCRIPT_DIR/inbox-manager" log "$MESSAGE" "$TITLE"
+
 # Add to Inbox if inside tmux
 if [ -n "$TMUX" ]; then
     CURRENT_SESSION=$(tmux display-message -p '#S')
