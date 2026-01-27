@@ -17,3 +17,16 @@
 	path = ~/.gitconfig.local
 [alias]
 	gph = "!f() { git push -f origin \"HEAD:refs/heads/benjamin_malley-$(git rev-parse --abbrev-ref HEAD)\" \"$@\"; }; f"
+	trunk = "!f() { \
+		branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); \
+		if [ -z \"$branch\" ]; then \
+			if git show-ref --verify --quiet refs/heads/main; then branch='main'; \
+			elif git show-ref --verify --quiet refs/heads/master; then branch='master'; \
+			fi; \
+		fi; \
+		if [ -n \"$branch\" ]; then \
+			git checkout \"$branch\"; \
+		else \
+			echo 'Error: Could not determine trunk branch'; return 1; \
+		fi; \
+	}; f"
