@@ -84,6 +84,7 @@ class TestInstallScript(unittest.TestCase):
         mock_run_command.assert_any_call(['tmux', 'kill-server'], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
 
         claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
         self.assertTrue(os.path.isdir(claude_agents_dir))

@@ -143,6 +143,7 @@ def install_dotfiles():
     symlink_file('.zshrc', '.zshrc')
     symlink_file('.tmux.conf', '.tmux.conf')
     symlink_file('.vimrc', '.vimrc')
+    symlink_file('ghostty/config', '.config/ghostty/config')
     symlink_file('AGENT.md', os.path.join('.gemini', 'GEMINI.md'))
     symlink_file('AGENT.md', os.path.join('.claude', 'CLAUDE.md'))
     symlink_file('gemini-settings.json', os.path.join('.gemini', 'settings.json'))
