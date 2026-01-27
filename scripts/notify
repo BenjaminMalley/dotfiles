@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Get directory of this script to find inbox-manager
-SCRIPT_DIR=$(dirname "$0")
-
 # Default values
 TITLE="Gemini"
 MESSAGE="The command has finished."
@@ -14,18 +11,6 @@ fi
 
 if [ -n "$2" ]; then
     TITLE="$2"
-fi
-
-CONTEXT="$3"
-
-# Log notification to history
-"$SCRIPT_DIR/inbox-manager" log "$MESSAGE" "$TITLE" "$CONTEXT"
-
-# Add to Inbox if inside tmux
-if [ -n "$TMUX" ]; then
-    CURRENT_SESSION=$(tmux display-message -p '#S')
-    CURRENT_WINDOW=$(tmux display-message -p '#I')
-    "$SCRIPT_DIR/inbox-manager" add "$CURRENT_SESSION" "$CURRENT_WINDOW" "$MESSAGE"
 fi
 
 # Send notification on macOS

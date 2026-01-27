@@ -81,78 +81,6 @@ def symlink_scripts():
         print(f"scripts symlinked to {tool_scripts_dir}")
 
 
-def setup_newsyslog():
-    """Sets up newsyslog configuration for the inbox manager log."""
-    if platform.system() != 'Darwin':
-        return
-
-    print("Setting up newsyslog configuration...")
-    home_dir = os.environ.get('HOME', '')
-    log_path = os.path.join(home_dir, '.inbox', 'history.log')
-    
-    # Ensure the directory and log file exist
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    if not os.path.exists(log_path):
-        open(log_path, 'a').close()
-
-    script_dir = os.path.dirname(__file__)
-    template_path = os.path.join(script_dir, 'macos', 'inbox.newsyslog.conf.template')
-    
-    if not os.path.exists(template_path):
-        print(f"Warning: {template_path} not found. Skipping newsyslog setup.")
-        return
-
-    with open(template_path, 'r') as f:
-        template = f.read()
-
-    conf_content = template.replace('{LOG_PATH}', log_path)
-    
-    temp_conf = '/tmp/inbox.newsyslog.conf'
-    with open(temp_conf, 'w') as f:
-        f.write(conf_content)
-
-    print("Installing newsyslog config to /etc/newsyslog.d/ (requires sudo)...")
-    run_command(['sudo', 'cp', temp_conf, '/etc/newsyslog.d/inbox.conf'])
-    run_command(['sudo', 'chmod', '644', '/etc/newsyslog.d/inbox.conf'])
-    run_command(['sudo', 'chown', 'root:wheel', '/etc/newsyslog.d/inbox.conf'])
-
-
-def setup_logrotate():
-    """Sets up logrotate configuration for Linux systems."""
-    if platform.system() != 'Linux':
-        return
-
-    print("Setting up logrotate configuration...")
-    home_dir = os.environ.get('HOME', '')
-    log_path = os.path.join(home_dir, '.inbox', 'history.log')
-
-    # Ensure the directory and log file exist
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    if not os.path.exists(log_path):
-        open(log_path, 'a').close()
-
-    script_dir = os.path.dirname(__file__)
-    template_path = os.path.join(script_dir, 'linux', 'inbox.logrotate.conf.template')
-
-    if not os.path.exists(template_path):
-        print(f"Warning: {template_path} not found. Skipping logrotate setup.")
-        return
-
-    with open(template_path, 'r') as f:
-        template = f.read()
-
-    conf_content = template.replace('{LOG_PATH}', log_path)
-
-    temp_conf = '/tmp/inbox.logrotate.conf'
-    with open(temp_conf, 'w') as f:
-        f.write(conf_content)
-
-    print("Installing logrotate config to /etc/logrotate.d/ (requires sudo)...")
-    run_command(['sudo', 'cp', temp_conf, '/etc/logrotate.d/inbox'])
-    run_command(['sudo', 'chmod', '644', '/etc/logrotate.d/inbox'])
-    run_command(['sudo', 'chown', 'root:root', '/etc/logrotate.d/inbox'])
-
-
 def install_dotfiles():
     """Installs dotfiles and software."""
     print("Starting bootstrap process...")
@@ -164,8 +92,6 @@ def install_dotfiles():
         if not shutil.which('brew'):
             print("Homebrew not found. Installing Homebrew...")
             run_command(['/bin/bash', '-c', '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/LATEST/install.sh)'])
-            # This is tricky to handle in a script, as it modifies the shell environment.
-            # For simplicity, we'll assume the user runs this in a new shell or sources their .zprofile.
         else:
             print("Homebrew is already installed. Updating...")
             run_command(['brew', 'update'])
@@ -207,10 +133,8 @@ def install_dotfiles():
             print("No Brewfile.opt found. Skipping optional software installation.")
 
         set_macos_preferences()
-        setup_newsyslog()
     else:
         print("Not on MacOS. Skipping homebrew and macOS settings installation.")
-        setup_logrotate()
 
     print("Symlinking dotfiles...")
     symlink_file('gitconfig', '.gitconfig')

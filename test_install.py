@@ -43,13 +43,12 @@ class TestInstallScript(unittest.TestCase):
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), '.tmux.conf'))
         self.assertEqual(os.path.realpath(destination_path), source_path)
 
-    @patch('install.setup_newsyslog')
     @patch('install.set_macos_preferences')
     @patch('install.run_command')
     @patch('builtins.input', return_value='y')
     @patch('platform.system', return_value='Darwin')
     @patch('shutil.which', return_value=True)
-    def test_install_macos(self, mock_which, mock_system, mock_input, mock_run_command, mock_set_macos, mock_setup_newsyslog):
+    def test_install_macos(self, mock_which, mock_system, mock_input, mock_run_command, mock_set_macos):
         """Test the install script on macOS."""
         # Arrange
         brewfile = os.path.join(os.path.dirname(__file__), 'Brewfile')
@@ -84,7 +83,6 @@ class TestInstallScript(unittest.TestCase):
 
         mock_run_command.assert_any_call(['/bin/bash', '-c', 'if tmux info &>/dev/null; then tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
         mock_set_macos.assert_called_once()
-        mock_setup_newsyslog.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
 
