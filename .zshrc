@@ -38,5 +38,12 @@ gotrunk() {
   fi
 }
 
+# Fix SSH Agent in tmux: symlink the dynamic socket to a static path
+if [[ -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$HOME/.ssh/ssh_auth_sock" ]]; then
+  mkdir -p ~/.ssh
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
+export SSH_AUTH_SOCK="$HOME/.ssh/ssh_auth_sock"
+
 # Disable audible beep
 unsetopt BEEP
