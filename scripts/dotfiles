@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import argparse
 
 # Add the repository root to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -10,4 +11,9 @@ sys.path.insert(0, repo_root)
 from install import install_dotfiles
 
 if __name__ == "__main__":
-    install_dotfiles()
+    parser = argparse.ArgumentParser(description="Install dotfiles and software.")
+    parser.add_argument('--skip-optional', action='store_true', help="Skip optional software installation.")
+    parser.add_argument('--yes', '-y', action='store_true', help="Answer yes to all prompts.")
+    args = parser.parse_args()
+
+    install_dotfiles(args)
