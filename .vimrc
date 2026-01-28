@@ -30,3 +30,15 @@ colorscheme desert
 set noerrorbells
 set novisualbell
 set t_vb=
+
+" Auto-reload files when they change on disk
+set autoread
+
+" Triger `checktime` when cursor stops moving or window focus changes
+augroup AutoRead
+  autocmd!
+  autocmd FocusGained,BufEnter,CursorHold,CursorHoldI * if mode() != 'c' | checktime | endif
+  " Notification when file changes
+  autocmd FileChangedShellPost *
+    \ echohl WarningMsg | echo "File changed on disk. Buffer reloaded." | echohl None
+augroup END
