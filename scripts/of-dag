@@ -15,12 +15,13 @@ import os
 import re
 import subprocess
 import sys
+from typing import Optional
 
 
 URL_PATTERN = re.compile(r"View the DAG at (https?://\S+)")
 
 
-def extract_url(text: str) -> str | None:
+def extract_url(text: str) -> Optional[str]:
     """Extract the DAG URL from log text."""
     match = URL_PATTERN.search(text)
     return match.group(1) if match else None
@@ -44,7 +45,7 @@ def get_logs(job_id: str) -> str:
         sys.exit(1)
 
 
-def tail_logs(job_id: str) -> str | None:
+def tail_logs(job_id: str) -> Optional[str]:
     """Tail logs until URL is found or process exits."""
     try:
         process = subprocess.Popen(
