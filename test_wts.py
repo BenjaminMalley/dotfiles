@@ -265,7 +265,8 @@ class TestWtsIntegration(unittest.TestCase):
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
-        
+        env.pop('TMUX', None)  # Ensure we test attach-session path, not switch-client
+
         # Run wts --attach
         res = subprocess.run([sys.executable, WTS_SCRIPT, '--attach'], cwd=self.test_dir, env=env, capture_output=True, text=True)
         if res.returncode != 0:
