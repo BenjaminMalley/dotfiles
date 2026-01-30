@@ -1,7 +1,5 @@
 [push]
 	default = current
-[remote "origin"]
-	push = refs/heads/*:refs/heads/benjamin_malley-*
 [core]
 	fsmonitor = true
 [feature]
@@ -16,6 +14,5 @@
 [include]
 	path = ~/.gitconfig.local
 [alias]
-	gph = "!f() { git push -f origin \"HEAD:refs/heads/benjamin_malley-$(git rev-parse --abbrev-ref HEAD)\" \"$@\"; }; f"
 	rb = "!f() { local default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|^refs/remotes/||'); git fetch origin HEAD:refs/remotes/$default_branch && git rebase refs/remotes/$default_branch; }; f"
 	rst = "!f() { local default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|^refs/remotes/||'); git fetch origin HEAD:refs/remotes/$default_branch && git reset --hard refs/remotes/$default_branch; }; f"

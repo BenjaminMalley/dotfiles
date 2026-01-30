@@ -82,6 +82,7 @@ def main():
     parser.add_argument("name", nargs="?", help="Branch name or session name")
     parser.add_argument("--done", "-d", action="store_true", help="Clean up current session")
     parser.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
+    parser.add_argument("--no-prefix", action="store_true", help="Do not auto-prefix branch name with username")
     parser.add_argument("--attach", "-a", action="store_true", help="Attach to session if it exists")
     
     args = parser.parse_args()
@@ -146,19 +147,34 @@ def main():
         worktree_path = home_dir / "worktrees" / repo_name / branch_name
         target_dir = worktree_path
 
+        # Determine full branch name with prefix
+        user_prefix = os.environ.get('USER', '').lower()
+        full_branch_name = branch_name
+        if not args.no_prefix and user_prefix and not branch_name.startswith(f"{user_prefix}/"):
+            full_branch_name = f"{user_prefix}/{branch_name}"
+
         # Create worktree if it doesn't exist
         if worktree_path.exists():
             print(f"Worktree already exists at {worktree_path}")
         else:
-            print(f"Creating worktree for branch '{branch_name}' at {worktree_path}...")
             worktree_path.parent.mkdir(parents=True, exist_ok=True)
             
-            branch_exists_result = subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch_name}'])
-            if branch_exists_result.returncode != 0:
+            # Check if branch exists (try full name first, then short name as fallback if user meant existing branch)
+            branch_exists = False
+            target_branch = full_branch_name
+            
+            if subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{full_branch_name}']).returncode == 0:
+                branch_exists = True
+            elif subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch_name}']).returncode == 0:
+                branch_exists = True
+                target_branch = branch_name # Use the existing short-name branch if it exists
+
+            if not branch_exists:
                 try:
-                    create_branch = input(f"Branch '{branch_name}' does not exist. Create it? (y/n) ")
+                    create_branch = input(f"Branch '{full_branch_name}' does not exist. Create it? (y/n) ")
                     if create_branch.lower() == 'y':
-                        run_command(['git', 'branch', branch_name])
+                        run_command(['git', 'branch', full_branch_name])
+                        target_branch = full_branch_name
                     else:
                         print("Aborting.")
                         sys.exit(0)
@@ -166,7 +182,8 @@ def main():
                     print("\nAborting.")
                     sys.exit(0)
 
-            run_command(['git', 'worktree', 'add', str(worktree_path), branch_name])
+            print(f"Creating worktree for branch '{target_branch}' at {worktree_path}...")
+            run_command(['git', 'worktree', 'add', str(worktree_path), target_branch])
     elif in_git and args.no_worktree:
         print(f"Using existing repository at {target_dir}")
     elif not in_git:
