@@ -26,8 +26,6 @@
     ]
   },
   "hooks": {
-    "enabled": true,
-    "notifications": true,
     "Notification": [
       {
         "hooks": [
