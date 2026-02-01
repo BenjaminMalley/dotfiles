@@ -16,8 +16,7 @@ def run_command(command, check=True, capture_output=False, text=True):
         return None
     except subprocess.CalledProcessError as e:
         if check:
-            print(f"Error: Command '{' '.join(command)}' failed with error: {e}", file=sys.stderr)
-            sys.exit(1)
+            raise e
         else:
             print(f"Warning: Command '{' '.join(command)}' failed with error: {e}", file=sys.stderr)
             return e
