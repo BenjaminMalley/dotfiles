@@ -157,13 +157,6 @@ def install_dotfiles(args):
     symlink_agent_files()
     symlink_scripts()
 
-    # Create empty .tmux.conf.local if it doesn't exist
-    home_dir = os.environ.get('HOME', '')
-    tmux_conf_local = os.path.join(home_dir, '.tmux.conf.local')
-    if not os.path.exists(tmux_conf_local):
-        open(tmux_conf_local, 'a').close()
-        print(f"Created empty {tmux_conf_local}")
-
     print("Reloading tmux configuration...")
 
 
