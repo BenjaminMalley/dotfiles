@@ -7,8 +7,8 @@ if [[ -L "$HOME/.zshrc" ]]; then
 fi
 
 set -o vi
-export EDITOR=vim
-export VISUAL=vim
+export EDITOR=nvim
+export VISUAL=nvim
 bindkey -M vicmd '/' history-incremental-search-backward
 
 if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then

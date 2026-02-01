@@ -148,7 +148,7 @@ def create_session(args):
         # Layout
         run_command(['tmux', 'rename-window', '-t', f'{session_name}:0', 'Agent'])
         run_command(['tmux', 'split-window', '-h', '-t', f'{session_name}:0', '-c', str(target_dir)])
-        run_command(['tmux', 'send-keys', '-t', f'{session_name}:0.1', 'vim .', 'Enter'])
+        run_command(['tmux', 'send-keys', '-t', f'{session_name}:0.1', 'nvim .', 'Enter'])
         
         agent_cmd = os.environ.get('WTS_AGENT_CMD')
         if agent_cmd:

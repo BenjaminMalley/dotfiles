@@ -1,87 +1,12 @@
 #!/usr/bin/env python3
-
 import sys
 import os
-import subprocess
-import argparse
 
-def get_other_pane():
-    """Finds a pane in the current window that is not the active one."""
-    try:
-        # List panes: id, active_flag, current_command
-        output = subprocess.check_output(
-            ['tmux', 'list-panes', '-F', '#{pane_id}:#{pane_active}:#{pane_current_command}'],
-            text=True
-        ).strip().split('\n')
-        
-        current_pane = None
-        other_panes = []
-        
-        for line in output:
-            p_id, active, cmd = line.split(':')
-            if active == '1':
-                current_pane = p_id
-            else:
-                other_panes.append((p_id, cmd))
-        
-        if not other_panes:
-            return None, None
-            
-        # Return the first non-active pane
-        return other_panes[0]
-        
-    except subprocess.CalledProcessError:
-        return None, None
+# Add repo root to sys.path to allow importing lib
+repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, repo_root)
 
-def main():
-    parser = argparse.ArgumentParser(description="Open file in the adjacent tmux pane's Vim.")
-    parser.add_argument("filename", nargs="?", help="File to open", default=None)
-    parser.add_argument("line", nargs="?", help="Line number", default=None)
-    args = parser.parse_args()
-    
-    # Ensure empty string is treated as None
-    filename = args.filename if args.filename and args.filename.strip() else None
-    
-    # Find target pane
-    target_pane_id, pane_cmd = get_other_pane()
-    
-    if not target_pane_id:
-        print("Error: Could not find another pane in the current tmux window.")
-        sys.exit(1)
-        
-    # Check if the target pane is running vim, vi, or nvim
-    is_vim = any(cmd in pane_cmd.lower() for cmd in ['vim', 'vi', 'nvim'])
-    
-    # Construct Tmux commands
-    cmds = []
-    
-    if is_vim:
-        # Escape twice to ensure we're out of any modes and back to Normal
-        cmds.append(['tmux', 'send-keys', '-t', target_pane_id, 'Escape', 'Escape'])
-        
-        if filename:
-            # Open/Reload specific file forcefully
-            abs_path = os.path.abspath(filename)
-            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':e! {abs_path}', 'Enter', ':redraw!', 'Enter'])
-            if args.line:
-                cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':{args.line}', 'Enter'])
-        else:
-            # Just refresh current buffer
-            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, ':checktime', 'Enter', ':redraw!', 'Enter'])
-    else:
-        if filename:
-            # Start vim with the file
-            abs_path = os.path.abspath(filename)
-            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f'vim {abs_path}', 'Enter'])
-            if args.line:
-                cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':{args.line}', 'Enter'])
-        
-    # Handle line number (removed from bottom as it is now handled inside if/else)
-
-        
-    # Execute commands
-    for cmd in cmds:
-        subprocess.run(cmd, check=True)
+from lib.v import main
 
 if __name__ == "__main__":
     main()
