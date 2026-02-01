@@ -52,8 +52,10 @@ set t_vb=
 
 " Enable mouse support
 set mouse=a
-if &term =~ 'xterm' || &term =~ 'tmux'
-  set ttymouse=sgr
+if !has('nvim')
+  if &term =~ 'xterm' || &term =~ 'tmux'
+    set ttymouse=sgr
+  endif
 endif
 
 " Fix visual artifacts in tmux (background color erase issues)
