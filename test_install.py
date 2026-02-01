@@ -89,6 +89,7 @@ class TestInstallScript(unittest.TestCase):
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'nvim', 'init.vim')))
 
         claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
         self.assertTrue(os.path.isdir(claude_agents_dir))
