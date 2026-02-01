@@ -31,7 +31,14 @@ try:
     # 2. Notify when the agent is done
     elif event == 'AfterAgent':
         should_notify = True
-        
+    
+    # 3. Check for file modification tools to trigger editor refresh
+    elif event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
+        tool_args = data.get('tool_args', {})
+        file_path = tool_args.get('file_path')
+        if file_path:
+            print(f'REFRESH:{file_path}')
+
     print('1' if should_notify else '0')
     print(project_name)
     print(msg)
@@ -48,9 +55,17 @@ should_notify=$(echo "$output" | sed -n '1p')
 project_name=$(echo "$output" | sed -n '2p')
 message=$(echo "$output" | sed -n '3p')
 full_cwd=$(echo "$output" | sed -n '4p')
+refresh_cmd=$(echo "$output" | grep "^REFRESH:")
+
+SCRIPT_DIR=$(dirname "$0")
+
+# Handle Editor Refresh
+if [ ! -z "$refresh_cmd" ]; then
+    file_to_refresh=${refresh_cmd#REFRESH:}
+    "$SCRIPT_DIR/v" "$file_to_refresh"
+fi
 
 if [ "$should_notify" == "1" ]; then
-    SCRIPT_DIR=$(dirname "$0")
     # Title: Gemini (dotfiles)
     # Message: ToolPermission | /path/to/project
     "$SCRIPT_DIR/notify" "$message" "Gemini ($project_name)" "$full_cwd"

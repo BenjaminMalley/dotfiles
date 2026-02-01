@@ -31,6 +31,9 @@ project_name=$(echo "$output" | sed -n '2p')
 
 if [ "$should_notify" == "1" ]; then
     SCRIPT_DIR=$(dirname "$0")
+    # Refresh the editor pane (generic checktime)
+    "$SCRIPT_DIR/v"
+    
     "$SCRIPT_DIR/notify" "Input Required" "Claude ($project_name)"
 fi
 

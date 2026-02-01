@@ -165,9 +165,6 @@ def install_dotfiles(args):
         print(f"Created empty {tmux_conf_local}")
 
     print("Reloading tmux configuration...")
-    # Explicitly unset deprecated hooks and clear status-right to avoid ghosting from previous versions
-    tmux_cleanup = 'tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""'
-    run_command(['/bin/bash', '-c', f'if tmux info &>/dev/null; then {tmux_cleanup}; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'], check=False)
 
 
 if __name__ == '__main__':
