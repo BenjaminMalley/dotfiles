@@ -203,6 +203,7 @@ class TestWtsIntegration(unittest.TestCase):
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+        env['WTS_AGENT_CMD'] = 'test-agent'
         
         # Run wts script
         subprocess.run([sys.executable, WTS_SCRIPT, branch_name], cwd=self.test_dir, env=env, check=True)
@@ -219,6 +220,10 @@ class TestWtsIntegration(unittest.TestCase):
             content = f.read()
             self.assertIn("new-session", content)
             self.assertIn(branch_name, content)
+            self.assertIn("rename-window", content)
+            self.assertIn("split-window", content)
+            self.assertIn("vim .", content)
+            self.assertIn("test-agent", content)
 
     def test_wts_done(self):
         # Start tmux session running the wts command directly
