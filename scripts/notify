@@ -1,24 +1,37 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import sys
+import subprocess
+import platform
 
-# Default values
-TITLE="Gemini"
-MESSAGE="The command has finished."
+def main():
+    # Default values
+    title = "Gemini"
+    message = "The command has finished."
 
-# Override with arguments if provided
-if [ -n "$1" ]; then
-    MESSAGE="$1"
-fi
+    # Override with arguments if provided
+    if len(sys.argv) > 1:
+        message = sys.argv[1]
+    
+    if len(sys.argv) > 2:
+        title = sys.argv[2]
 
-if [ -n "$2" ]; then
-    TITLE="$2"
-fi
+    system = platform.system()
 
-# Send notification on macOS
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Fallback to osascript as it seems more reliable for this user
-    osascript -e "display notification \"$MESSAGE\" with title \"$TITLE\" sound name \"Glass\""
-else
-    # Fallback for other systems
-    echo -e "\a"
-    echo "Notification: $TITLE - $MESSAGE"
-fi
+    if system == 'Darwin':
+        # Send notification on macOS using osascript
+        # We escape double quotes in the message and title
+        safe_message = message.replace('"', '\"')
+        safe_title = title.replace('"', '\"')
+        
+        script = f'display notification "{safe_message}" with title "{safe_title}" sound name "Glass"'
+        try:
+            subprocess.run(['osascript', '-e', script], check=True)
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write(f"Error sending notification: {e}\n")
+    else:
+        # Fallback for other systems: ASCII Bell and print
+        sys.stdout.write('\a')
+        print(f"Notification: {title} - {message}")
+
+if __name__ == "__main__":
+    main()

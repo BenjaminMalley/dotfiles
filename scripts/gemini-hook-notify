@@ -1,86 +1,73 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import sys
+import json
+import os
+import subprocess
+import re
 
-# Read stdin to get the hook payload
-input=$(cat)
+def run_script(script_name, *args):
+    """Helper to run a script in the same directory."""
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.join(script_dir, script_name)
+    try:
+        subprocess.run([script_path, *args], check=False)
+    except Exception as e:
+        sys.stderr.write(f"Error running {script_name}: {e}\n")
 
-# Use python3 to parse the JSON and return:
-# Line 1: 0 or 1 (should notify)
-# Line 2: The project/directory name (if notify=1)
-output=$(echo "$input" | python3 -c "
-import sys, json, os
-
-try:
-    data = json.load(sys.stdin)
-    ntype = data.get('notification_type', '')
-    event = data.get('hook_event_name', '')
-    cwd = data.get('cwd', '')
-    
-    # Get just the directory name (e.g., 'dotfiles')
-    project_name = os.path.basename(cwd) if cwd else 'Gemini'
-    
-    should_notify = False
-    msg = ntype if ntype else 'Agent Finished'
-    if event == 'Notification' and ntype in ['ToolPermission', 'InputRequired', 'IdleAlert']:
-        should_notify = True
-    elif event == 'AfterAgent':
-        should_notify = True
+def main():
+    try:
+        # Read the hook payload from stdin
+        payload_str = sys.stdin.read()
+        if not payload_str:
+            print("{}")
+            return
         
-    print('1' if should_notify else '0')
-    print(project_name)
-    print(msg)
-    print(cwd)
+        data = json.loads(payload_str)
+        ntype = data.get('notification_type', '')
+        event = data.get('hook_event_name', '')
+        cwd = data.get('cwd', '')
+        
+        # Get just the directory name (e.g., 'dotfiles')
+        project_name = os.path.basename(cwd) if cwd else 'Gemini'
+        
+        should_notify = False
+        msg = ntype if ntype else 'Agent Finished'
+        
+        if event == 'Notification' and ntype in ['ToolPermission', 'InputRequired', 'IdleAlert']:
+            should_notify = True
+        elif event == 'AfterAgent':
+            should_notify = True
 
-    # 3. Check for file modification tools to trigger editor refresh
-    if event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
-        tool_input = data.get('tool_input', {})
-        file_path = tool_input.get('file_path')
-        if file_path:
-            line_num = ''
-            # Try to extract line number from diff
-            try:
-                diff = data.get('tool_response', {}).get('returnDisplay', {}).get('fileDiff', '')
-                import re
-                # Match hunk header: @@ -start,len +start,len @@
-                match = re.search(r'@@ -\d+,\d+ \+(\d+),\d+ @@', diff)
-                if match:
-                    # Offset by 3 to skip the context lines in the diff
-                    line_num = str(int(match.group(1)) + 3)
-            except Exception:
-                pass
-            
-            if line_num:
-                print(f'REFRESH:{file_path}:{line_num}')
-            else:
-                print(f'REFRESH:{file_path}')
+        # Check for file modification tools to trigger editor refresh
+        if event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
+            tool_input = data.get('tool_input', {})
+            file_path = tool_input.get('file_path')
+            if file_path:
+                line_num = None
+                # Try to extract line number from diff
+                try:
+                    diff = data.get('tool_response', {}).get('returnDisplay', {}).get('fileDiff', '')
+                    # Match hunk header: @@ -start,len +start,len @@
+                    match = re.search(r'@@ -\d+,\d+ \+(\d+),\d+ @@', diff)
+                    if match:
+                        # Offset by 3 to skip the context lines in the diff
+                        line_num = str(int(match.group(1)) + 3)
+                except Exception:
+                    pass
+                
+                if line_num:
+                    run_script('v', file_path, line_num)
+                else:
+                    run_script('v', file_path)
 
-except Exception as e:
-    # Print error to stderr for logging
-    sys.stderr.write(f'Python Error: {str(e)}\n')
-    print('0')
-    print('Gemini')
-    print('Task Finished')
-    print('')
-")
+        if should_notify:
+            run_script('notify', msg, f"Gemini ({project_name})", cwd)
 
-should_notify=$(echo "$output" | sed -n '1p')
-project_name=$(echo "$output" | sed -n '2p')
-message=$(echo "$output" | sed -n '3p')
-full_cwd=$(echo "$output" | sed -n '4p')
+    except Exception as e:
+        sys.stderr.write(f"Python Error: {str(e)}\n")
+    
+    # Always return success JSON to stdout
+    print("{}")
 
-SCRIPT_DIR=$(dirname "$0")
-
-# Handle Editor Refresh
-echo "$output" | grep "^REFRESH:" | while read -r line; do
-    content=${line#REFRESH:}
-    file_to_refresh=$(echo "$content" | cut -d: -f1)
-    line_num=$(echo "$content" | cut -d: -f2)
-    "$SCRIPT_DIR/v" "$file_to_refresh" "$line_num"
-done
-
-if [ "$should_notify" == "1" ]; then
-    "$SCRIPT_DIR/notify" "$message" "Gemini ($project_name)" "$full_cwd"
-fi
-
-# Always return success JSON
-echo "{}"
-exit 0
+if __name__ == "__main__":
+    main()
