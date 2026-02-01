@@ -197,6 +197,24 @@ def main():
     else:
         print(f"Creating new tmux session '{session_name}'...")
         run_command(['tmux', 'new-session', '-d', '-s', session_name, '-c', str(target_dir)])
+        
+        # Configure layout: Agent on left, Vim on right
+        print("Configuring Agent/Vim layout...")
+        subprocess.run(['tmux', 'rename-window', '-t', f'{session_name}:0', 'Agent'])
+        subprocess.run(['tmux', 'split-window', '-h', '-t', f'{session_name}:0', '-c', str(target_dir)])
+        subprocess.run(['tmux', 'send-keys', '-t', f'{session_name}:0.1', 'vim .', 'Enter'])
+        
+        # Detect agent
+        agent_cmd = None
+        if shutil.which('claude'):
+            agent_cmd = 'claude'
+        elif shutil.which('gemini'):
+            agent_cmd = 'gemini'
+            
+        if agent_cmd:
+            subprocess.run(['tmux', 'send-keys', '-t', f'{session_name}:0.0', agent_cmd, 'Enter'])
+        
+        subprocess.run(['tmux', 'select-pane', '-t', f'{session_name}:0.0'])
 
     # If inside tmux, switch to the new session, otherwise attach
     if 'TMUX' in os.environ:
