@@ -16,3 +16,4 @@
 [alias]
 	rb = "!f() { local default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|^refs/remotes/||'); git fetch origin HEAD:refs/remotes/$default_branch && git rebase refs/remotes/$default_branch; }; f"
 	rst = "!f() { local default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|^refs/remotes/||'); git fetch origin HEAD:refs/remotes/$default_branch && git reset --hard refs/remotes/$default_branch; }; f"
+	cleanup = "!f() { local default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|^refs/remotes/origin/||'); git remote prune origin && git branch --merged $default_branch | grep -v \"^\\\\*\" | grep -v \"^  $default_branch$\" | xargs -n 1 git branch -d; }; f"
