@@ -11,6 +11,7 @@
   "selectedAuthType": "oauth-personal",
   "theme": "Default",
   "vimMode": true,
+  "model": "gemini-3-flash-preview",
   "security": {
     "auth": {
       "selectedType": "oauth-personal"
