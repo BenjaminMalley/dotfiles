@@ -62,10 +62,10 @@ def main():
         if filename:
             # Open/Reload specific file forcefully
             abs_path = os.path.abspath(filename)
-            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':e! {abs_path}', 'Enter'])
+            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':e! {abs_path}', 'Enter', ':redraw!', 'Enter'])
         else:
             # Just refresh current buffer
-            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, ':checktime', 'Enter'])
+            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, ':checktime', 'Enter', ':redraw!', 'Enter'])
     else:
         if filename:
             # Start vim with the file
