@@ -204,12 +204,8 @@ def main():
         subprocess.run(['tmux', 'split-window', '-h', '-t', f'{session_name}:0', '-c', str(target_dir)])
         subprocess.run(['tmux', 'send-keys', '-t', f'{session_name}:0.1', 'vim .', 'Enter'])
         
-        # Detect agent
-        agent_cmd = None
-        if shutil.which('claude'):
-            agent_cmd = 'claude'
-        elif shutil.which('gemini'):
-            agent_cmd = 'gemini'
+        # Detect agent from environment variable
+        agent_cmd = os.environ.get('WTS_AGENT_CMD')
             
         if agent_cmd:
             subprocess.run(['tmux', 'send-keys', '-t', f'{session_name}:0.0', agent_cmd, 'Enter'])
