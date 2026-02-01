@@ -1,73 +1,14 @@
 #!/usr/bin/env python3
 import sys
-import json
 import os
-import subprocess
-import re
 
-def run_script(script_name, *args):
-    """Helper to run a script in the same directory."""
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    script_path = os.path.join(script_dir, script_name)
-    try:
-        subprocess.run([script_path, *args], check=False)
-    except Exception as e:
-        sys.stderr.write(f"Error running {script_name}: {e}\n")
+# Add repo root to sys.path to allow importing lib
+repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, repo_root)
 
-def main():
-    try:
-        # Read the hook payload from stdin
-        payload_str = sys.stdin.read()
-        if not payload_str:
-            print("{}")
-            return
-        
-        data = json.loads(payload_str)
-        ntype = data.get('notification_type', '')
-        event = data.get('hook_event_name', '')
-        cwd = data.get('cwd', '')
-        
-        # Get just the directory name (e.g., 'dotfiles')
-        project_name = os.path.basename(cwd) if cwd else 'Gemini'
-        
-        should_notify = False
-        msg = ntype if ntype else 'Agent Finished'
-        
-        if event == 'Notification' and ntype in ['ToolPermission', 'InputRequired', 'IdleAlert']:
-            should_notify = True
-        elif event == 'AfterAgent':
-            should_notify = True
-
-        # Check for file modification tools to trigger editor refresh
-        if event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
-            tool_input = data.get('tool_input', {})
-            file_path = tool_input.get('file_path')
-            if file_path:
-                line_num = None
-                # Try to extract line number from diff
-                try:
-                    diff = data.get('tool_response', {}).get('returnDisplay', {}).get('fileDiff', '')
-                    # Match hunk header: @@ -start,len +start,len @@
-                    match = re.search(r'@@ -\d+,\d+ \+(\d+),\d+ @@', diff)
-                    if match:
-                        # Offset by 3 to skip the context lines in the diff
-                        line_num = str(int(match.group(1)) + 3)
-                except Exception:
-                    pass
-                
-                if line_num:
-                    run_script('v', file_path, line_num)
-                else:
-                    run_script('v', file_path)
-
-        if should_notify:
-            run_script('notify', msg, f"Gemini ({project_name})", cwd)
-
-    except Exception as e:
-        sys.stderr.write(f"Python Error: {str(e)}\n")
-    
-    # Always return success JSON to stdout
-    print("{}")
+from lib.hooks import handle_gemini_payload
 
 if __name__ == "__main__":
-    main()
+    payload = sys.stdin.read()
+    response = handle_gemini_payload(payload)
+    print(response)

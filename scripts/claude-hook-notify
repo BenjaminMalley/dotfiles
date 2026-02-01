@@ -1,42 +1,14 @@
 #!/usr/bin/env python3
 import sys
-import json
 import os
-import subprocess
 
-def run_script(script_name, *args):
-    """Helper to run a script in the same directory."""
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    script_path = os.path.join(script_dir, script_name)
-    try:
-        subprocess.run([script_path, *args], check=False)
-    except Exception as e:
-        sys.stderr.write(f"Error running {script_name}: {e}\n")
+# Add repo root to sys.path to allow importing lib
+repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, repo_root)
 
-def main():
-    try:
-        # Read the hook payload from stdin
-        payload_str = sys.stdin.read()
-        if not payload_str:
-            print("{}")
-            return
-            
-        data = json.loads(payload_str)
-        # Claude usually provides context in the top level or 'context' key
-        cwd = data.get('cwd') or data.get('context', {}).get('cwd', '')
-        project_name = os.path.basename(cwd) if cwd else 'Claude'
-        
-        # Refresh the editor pane (generic checktime)
-        run_script('v')
-        
-        # For Claude, we trigger this script specifically on notification events
-        run_script('notify', "Input Required", f"Claude ({project_name})")
-
-    except Exception as e:
-        sys.stderr.write(f"Python Error: {str(e)}\n")
-    
-    # Always return success JSON to stdout
-    print("{}")
+from lib.hooks import handle_claude_payload
 
 if __name__ == "__main__":
-    main()
+    payload = sys.stdin.read()
+    response = handle_claude_payload(payload)
+    print(response)
