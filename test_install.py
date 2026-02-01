@@ -29,7 +29,7 @@ class TestInstallScript(unittest.TestCase):
 
     def test_symlink_gitconfig(self):
         """Test that .gitconfig is symlinked correctly."""
-        install.symlink_file('gitconfig', '.gitconfig')
+        install.symlink_resource('gitconfig', '.gitconfig')
         destination_path = os.path.join(self.temp_dir, '.gitconfig')
         self.assertTrue(os.path.islink(destination_path))
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
@@ -37,7 +37,7 @@ class TestInstallScript(unittest.TestCase):
 
     def test_symlink_tmux_conf(self):
         """Test that .tmux.conf is symlinked correctly."""
-        install.symlink_file('.tmux.conf', '.tmux.conf')
+        install.symlink_resource('.tmux.conf', '.tmux.conf')
         destination_path = os.path.join(self.temp_dir, '.tmux.conf')
         self.assertTrue(os.path.islink(destination_path))
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), '.tmux.conf'))
@@ -134,7 +134,7 @@ class TestInstallScript(unittest.TestCase):
             f.write('old config')
 
         # Act
-        install.symlink_file('gitconfig', '.gitconfig')
+        install.symlink_resource('gitconfig', '.gitconfig')
 
         # Assert
         self.assertTrue(os.path.islink(destination_path))

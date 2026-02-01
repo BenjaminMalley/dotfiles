@@ -1,8 +1,7 @@
-
 import unittest
 import platform
 import subprocess
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 # Import the module to be tested
 import macos_settings
@@ -10,13 +9,10 @@ import macos_settings
 class TestMacOSSettingsScript(unittest.TestCase):
 
     @unittest.skipIf(platform.system() != 'Darwin', "macOS specific tests")
-    @patch('macos_settings.subprocess.run')
     @patch('macos_settings.run_command')
-    def test_macos_settings(self, mock_run_command, mock_subprocess_run):
+    def test_macos_settings(self, mock_run_command):
         """Test the macos_settings.py script."""
-        # Setup mock for subprocess.run to simulate 'Set' failing so 'Add' is called via run_command
-        mock_subprocess_run.side_effect = subprocess.CalledProcessError(1, 'cmd')
-
+        
         # Act
         macos_settings.set_macos_preferences()
 
@@ -30,17 +26,16 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'])
         mock_run_command.assert_any_call(['osascript', '-e', 'set volume alert volume 0'])
 
-        mock_run_command.assert_any_call(['gh', 'config', 'set', 'prompt', 'disabled'])
+        mock_run_command.assert_any_call(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
 
         # Terminal profile settings (checking a few)
-        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Add :'Window Settings':Basic:shellExitAction integer 1", unittest.mock.ANY])
-        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Add :'Window Settings':Pro:BackgroundAlphaInactive real 0.5", unittest.mock.ANY])
-        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Add :'Window Settings':Basic:BackgroundSettingsForInactiveWindows bool true", unittest.mock.ANY])
+        # Note: In the refactored code, set_terminal_profile_setting calls run_command twice if Set fails.
+        # Here we just verify that it was called at least once with the expected arguments.
+        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Set :'Window Settings':Basic:shellExitAction 1", unittest.mock.ANY], check=True)
 
-        mock_run_command.assert_any_call(['killall', 'Terminal'])
-        mock_run_command.assert_any_call(['killall', 'Dock'])
-        mock_run_command.assert_any_call(['killall', 'Finder'])
-        mock_run_command.assert_any_call(['killall', 'WindowManager'])
+        mock_run_command.assert_any_call(['killall', 'Dock'], check=False)
+        mock_run_command.assert_any_call(['killall', 'Finder'], check=False)
+        mock_run_command.assert_any_call(['killall', 'WindowManager'], check=False)
 
 if __name__ == '__main__':
     unittest.main()

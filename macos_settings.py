@@ -1,17 +1,6 @@
-
-import subprocess
-import platform
 import os
-
-def run_command(command):
-    """Runs a command and checks for errors."""
-    try:
-        subprocess.run(command, check=True)
-    except FileNotFoundError:
-        print(f"Warning: Command '{command[0]}' not found. Skipping.")
-    except subprocess.CalledProcessError as e:
-        print(f"Warning: Command '{' '.join(command)}' failed with error: {e}")
-
+import sys
+from lib.utils import run_command, is_darwin
 
 def set_shortcut(action_id, key_code, modifiers):
     """Sets a keyboard shortcut."""
@@ -30,31 +19,61 @@ def set_shortcut(action_id, key_code, modifiers):
     """
     run_command(['/usr/bin/defaults', 'write', 'com.apple.symbolichotkeys', 'AppleSymbolicHotKeys', '-dict-add', str(action_id), shortcut_plist])
 
-
 def set_terminal_profile_setting(profile, key, type, value):
     """Sets a setting in a Terminal profile using PlistBuddy."""
-    plist = '~/Library/Preferences/com.apple.Terminal.plist'
+    plist = os.path.expanduser('~/Library/Preferences/com.apple.Terminal.plist')
     # Try to set it first
     try:
-        subprocess.run(['/usr/libexec/PlistBuddy', '-c', f"Set :'Window Settings':{profile}:{key} {value}", os.path.expanduser(plist)], check=True, capture_output=True)
-    except subprocess.CalledProcessError:
+        run_command(['/usr/libexec/PlistBuddy', '-c', f"Set :'Window Settings':{profile}:{key} {value}", plist], check=True)
+    except Exception:
         # If set fails, it probably doesn't exist, so try to add it
-        run_command(['/usr/libexec/PlistBuddy', '-c', f"Add :'Window Settings':{profile}:{key} {type} {value}", os.path.expanduser(plist)])
-
+        run_command(['/usr/libexec/PlistBuddy', '-c', f"Add :'Window Settings':{profile}:{key} {type} {value}", plist])
 
 def set_macos_preferences():
     """Sets macOS preferences."""
-    if platform.system() != 'Darwin':
+    if not is_darwin():
         print("Not on MacOS. Skipping macOS settings.")
         return
 
     print("Setting macOS preferences...")
 
-    # --- Trackpad ---
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'com.apple.swipescrolldirection', '-bool', 'false'])
+    # Define settings as a list of tuples (domain, key, type, value)
+    # Types: -bool, -int, -float, -string
+    SETTINGS = [
+        # Trackpad
+        ('NSGlobalDomain', 'com.apple.swipescrolldirection', '-bool', 'false'),
+        # Dock
+        ('com.apple.dock', 'autohide', '-bool', 'true'),
+        ('com.apple.dock', 'autohide-delay', '-float', '0'),
+        # Menu Bar
+        ('NSGlobalDomain', '_HIHideMenuBar', '-bool', 'true'),
+        # Keyboard
+        ('NSGlobalDomain', 'KeyRepeat', '-int', '2'),
+        ('NSGlobalDomain', 'InitialKeyRepeat', '-int', '12'),
+        ('NSGlobalDomain', 'AppleKeyboardUIMode', '-int', '3'),
+        ('NSGlobalDomain', 'NSAutomaticSpellingCorrectionEnabled', '-bool', 'false'),
+        ('NSGlobalDomain', 'NSAutomaticCapitalizationEnabled', '-bool', 'false'),
+        ('NSGlobalDomain', 'NSAutomaticQuoteSubstitutionEnabled', '-bool', 'false'),
+        ('NSGlobalDomain', 'NSAutomaticDashSubstitutionEnabled', '-bool', 'false'),
+        # Stage Manager
+        ('com.apple.WindowManager', 'GloballyEnabled', '-bool', 'true'),
+        # Finder
+        ('com.apple.finder', 'AppleShowAllFiles', '-bool', 'true'),
+        ('NSGlobalDomain', 'AppleShowAllExtensions', '-bool', 'true'),
+        ('com.apple.finder', 'ShowStatusBar', '-bool', 'true'),
+        ('com.apple.finder', 'ShowPathbar', '-bool', 'true'),
+        # Sound
+        ('NSGlobalDomain', 'com.apple.sound.beep.feedback', '-int', '0'),
+        ('NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'),
+        # Terminal
+        ('com.apple.Terminal', 'VisualBell', '-bool', 'false'),
+        ('com.apple.Terminal', 'AudibleBell', '-bool', 'false'),
+    ]
+
+    for domain, key, type_arg, value in SETTINGS:
+        run_command(['defaults', 'write', domain, key, type_arg, value])
 
     # --- Keyboard Shortcuts ---
-    print("Configuring keyboard shortcuts...")
     MODIFIERS = 1703936
     LEFT_ARROW = 123
     RIGHT_ARROW = 124
@@ -62,61 +81,29 @@ def set_macos_preferences():
     TILE_RIGHT_ID = 119
     set_shortcut(TILE_LEFT_ID, LEFT_ARROW, MODIFIERS)
     set_shortcut(TILE_RIGHT_ID, RIGHT_ARROW, MODIFIERS)
-    print("Keyboard shortcuts configured.")
-
-    # --- Dock ---
-    run_command(['defaults', 'write', 'com.apple.dock', 'autohide', '-bool', 'true'])
-    run_command(['defaults', 'write', 'com.apple.dock', 'autohide-delay', '-float', '0'])
-
-    # --- Menu Bar ---
-    run_command(['defaults', 'write', 'NSGlobalDomain', '_HIHideMenuBar', '-bool', 'true'])
-
-    # --- Keyboard ---
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'KeyRepeat', '-int', '2'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'InitialKeyRepeat', '-int', '12'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'AppleKeyboardUIMode', '-int', '3'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticSpellingCorrectionEnabled', '-bool', 'false'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticCapitalizationEnabled', '-bool', 'false'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticQuoteSubstitutionEnabled', '-bool', 'false'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'NSAutomaticDashSubstitutionEnabled', '-bool', 'false'])
-
-    # --- Stage Manager ---
-    run_command(['defaults', 'write', 'com.apple.WindowManager', 'GloballyEnabled', '-bool', 'true'])
-
-    # --- Finder ---
-    run_command(['defaults', 'write', 'com.apple.finder', 'AppleShowAllFiles', '-bool', 'true'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'AppleShowAllExtensions', '-bool', 'true'])
-    run_command(['defaults', 'write', 'com.apple.finder', 'ShowStatusBar', '-bool', 'true'])
-    run_command(['defaults', 'write', 'com.apple.finder', 'ShowPathbar', '-bool', 'true'])
-
-    # --- Sound ---
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.feedback', '-int', '0'])
-    run_command(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'])
-    # Also use osascript to set alert volume to 0 immediately
-    run_command(['osascript', '-e', 'set volume alert volume 0'])
-
-    # --- Terminal ---
-    run_command(['defaults', 'write', 'com.apple.Terminal', 'VisualBell', '-bool', 'false'])
-    run_command(['defaults', 'write', 'com.apple.Terminal', 'AudibleBell', '-bool', 'false'])
 
     # --- GH CLI ---
-    run_command(['gh', 'config', 'set', 'prompt', 'disabled'])
+    run_command(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
 
-    # Close window on exit and set transparency for unfocused windows
+    # --- Terminal Profiles ---
     for profile in ["Basic", "Pro", "Clear Dark"]:
         set_terminal_profile_setting(profile, "shellExitAction", "integer", "1")
         set_terminal_profile_setting(profile, "BackgroundAlphaInactive", "real", "0.5")
         set_terminal_profile_setting(profile, "BackgroundSettingsForInactiveWindows", "bool", "true")
 
-    print("Attempting to reload settings by restarting the Dock, Finder, and WindowManager...")
-    run_command(['killall', 'Terminal'])
-    run_command(['killall', 'Dock'])
-    run_command(['killall', 'Finder'])
-    run_command(['killall', 'WindowManager'])
-    run_command(['killall', 'SystemUIServer'])
+    # --- Sound (Immediate) ---
+    run_command(['osascript', '-e', 'set volume alert volume 0'])
 
-    print("macOS preferences have been set. A logout or restart may be required for all changes to take effect.")
+    print("Reloading system services (Dock, Finder, etc.)...")
+    SERVICES = ['Dock', 'Finder', 'WindowManager', 'SystemUIServer']
+    for service in SERVICES:
+        run_command(['killall', service], check=False)
 
+    # Only kill Terminal if we aren't running inside it or if explicitly asked
+    # (Leaving it for now as per original logic but we could be more careful)
+    # run_command(['killall', 'Terminal'], check=False)
+
+    print("macOS preferences have been set.")
 
 if __name__ == '__main__':
     set_macos_preferences()
