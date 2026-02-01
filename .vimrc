@@ -31,6 +31,9 @@ set noerrorbells
 set novisualbell
 set t_vb=
 
+" Enable mouse support
+set mouse=a
+
 " Auto-reload files when they change on disk
 set autoread
 
