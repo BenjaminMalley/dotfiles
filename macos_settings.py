@@ -22,12 +22,14 @@ def set_shortcut(action_id, key_code, modifiers):
 def set_terminal_profile_setting(profile, key, type, value):
     """Sets a setting in a Terminal profile using PlistBuddy."""
     plist = os.path.expanduser('~/Library/Preferences/com.apple.Terminal.plist')
+    # Use double quotes for path components to handle spaces correctly
+    path = f':"Window Settings":"{profile}":{key}'
     # Try to set it first
     try:
-        run_command(['/usr/libexec/PlistBuddy', '-c', f"Set :'Window Settings':{profile}:{key} {value}", plist], check=True)
+        run_command(['/usr/libexec/PlistBuddy', '-c', f"Set {path} {value}", plist], check=True)
     except Exception:
         # If set fails, it probably doesn't exist, so try to add it
-        run_command(['/usr/libexec/PlistBuddy', '-c', f"Add :'Window Settings':{profile}:{key} {type} {value}", plist])
+        run_command(['/usr/libexec/PlistBuddy', '-c', f"Add {path} {type} {value}", plist])
 
 def set_macos_preferences():
     """Sets macOS preferences."""

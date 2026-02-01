@@ -30,8 +30,9 @@ class TestMacOSSettingsScript(unittest.TestCase):
 
         # Terminal profile settings (checking a few)
         # Note: In the refactored code, set_terminal_profile_setting calls run_command twice if Set fails.
-        # Here we just verify that it was called at least once with the expected arguments.
-        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', "Set :'Window Settings':Basic:shellExitAction 1", unittest.mock.ANY], check=True)
+        # Here we just verify that it was called at least once with the expected arguments and proper quoting.
+        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', 'Set :"Window Settings":"Basic":shellExitAction 1', unittest.mock.ANY], check=True)
+        mock_run_command.assert_any_call(['/usr/libexec/PlistBuddy', '-c', 'Set :"Window Settings":"Clear Dark":shellExitAction 1', unittest.mock.ANY], check=True)
 
         mock_run_command.assert_any_call(['killall', 'Dock'], check=False)
         mock_run_command.assert_any_call(['killall', 'Finder'], check=False)
