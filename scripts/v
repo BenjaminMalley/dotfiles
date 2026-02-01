@@ -39,6 +39,9 @@ def main():
     parser.add_argument("line", nargs="?", help="Line number", default=None)
     args = parser.parse_args()
     
+    # Ensure empty string is treated as None
+    filename = args.filename if args.filename and args.filename.strip() else None
+    
     # Find target pane
     target_pane_id, pane_cmd = get_other_pane()
     
@@ -53,23 +56,24 @@ def main():
     cmds = []
     
     if is_vim:
-        cmds.append(['tmux', 'send-keys', '-t', target_pane_id, 'Escape'])
+        # Ctrl-C to clear command line, Escape for Normal mode
+        cmds.append(['tmux', 'send-keys', '-t', target_pane_id, 'C-c', 'Escape'])
         
-        if args.filename:
-            # Open/Reload specific file
-            abs_path = os.path.abspath(args.filename)
-            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':e {abs_path}', 'Enter'])
+        if filename:
+            # Open/Reload specific file forcefully
+            abs_path = os.path.abspath(filename)
+            cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':e! {abs_path}', 'Enter'])
         else:
             # Just refresh current buffer
             cmds.append(['tmux', 'send-keys', '-t', target_pane_id, ':checktime', 'Enter'])
     else:
-        if args.filename:
+        if filename:
             # Start vim with the file
-            abs_path = os.path.abspath(args.filename)
+            abs_path = os.path.abspath(filename)
             cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f'vim {abs_path}', 'Enter'])
         
     # Handle line number
-    if args.line and args.filename:
+    if args.line and filename:
         cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':{args.line}', 'Enter'])
         
     # Execute commands

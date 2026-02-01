@@ -31,3 +31,6 @@ set noerrorbells
 set novisualbell
 set t_vb=
 
+" Auto-reload files when they change on disk
+set autoread
+

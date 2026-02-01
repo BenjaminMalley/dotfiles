@@ -45,6 +45,16 @@
           }
         ]
       }
+    ],
+    "AfterTool": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.gemini/scripts/gemini-hook-notify"
+          }
+        ]
+      }
     ]
   }
 }
