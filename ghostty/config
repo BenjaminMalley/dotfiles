@@ -1,9 +1,3 @@
-# Ghostty Configuration
-font-family = "Andale Mono"
-
 # Mouse & Links
 # Allow holding Shift to bypass application mouse capture (vital for tmux)
 mouse-shift-capture = true
-
-# Ensure links open with the default macOS handler
-link-url-command = open
