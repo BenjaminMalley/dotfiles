@@ -1,5 +1,5 @@
 # Ghostty Configuration
-font-family = "JetBrainsMono Nerd Font Mono"
+font-family = "Andale Mono"
 
 # Mouse & Links
 # Allow holding Shift to bypass application mouse capture (vital for tmux)
