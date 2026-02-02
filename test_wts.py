@@ -66,7 +66,8 @@ class TestWtsIntegration(unittest.TestCase):
         """Tests automatic branch prefixing based on USER env var."""
         branch_name = "my-feature"
         user = "testuser"
-        expected_full_branch = f"{user}/{branch_name}"
+        repo_name = os.path.basename(self.test_dir)
+        expected_full_branch = f"{user}/{repo_name}-{branch_name}"
         
         # Create a fake tmux script
         fake_tmux_dir = os.path.join(self.test_dir, 'bin')
@@ -105,7 +106,6 @@ class TestWtsIntegration(unittest.TestCase):
         self.assertEqual(p.returncode, 0, "wts failed")
 
         # Verify worktree created at short path
-        repo_name = os.path.basename(self.test_dir)
         expected_worktree_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
         self.assertTrue(os.path.exists(expected_worktree_path), f"Worktree should be at {expected_worktree_path}")
         
@@ -123,62 +123,7 @@ class TestWtsIntegration(unittest.TestCase):
         # Verify tmux session uses short name
         with open(tmux_log, 'r') as f:
             content = f.read()
-            self.assertIn(f"new-session -d -s {repo_name}-{branch_name}", content)
-
-    def test_wts_create_no_prefix(self):
-        """Tests that --no-prefix prevents automatic branch prefixing."""
-        branch_name = "shared-feature"
-        user = "testuser"
-        
-        # Create a fake tmux script
-        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
-        os.makedirs(fake_tmux_dir, exist_ok=True)
-        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
-        tmux_log = os.path.join(self.test_dir, 'tmux_no_prefix.log')
-        with open(fake_tmux, 'w') as f:
-            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
-            f.write('if echo "$@" | grep -q "has-session"; then\n')
-            f.write('  exit 1\n')
-            f.write('fi\n')
-            f.write('exit 0\n')
-        os.chmod(fake_tmux, 0o755)
-        
-        env = os.environ.copy()
-        env['HOME'] = self.test_dir
-        env['USER'] = user
-        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
-        
-        # Run wts script with --no-prefix
-        p = subprocess.Popen(
-            [sys.executable, WTS_SCRIPT, branch_name, '--no-prefix'], 
-            cwd=self.test_dir, 
-            env=env,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        stdout, stderr = p.communicate(input="y\n")
-        
-        if p.returncode != 0:
-            print(f"STDOUT: {stdout}")
-            print(f"STDERR: {stderr}")
-        self.assertEqual(p.returncode, 0, "wts failed")
-
-        # Verify worktree created
-        repo_name = os.path.basename(self.test_dir)
-        expected_worktree_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
-        self.assertTrue(os.path.exists(expected_worktree_path), f"Worktree should be at {expected_worktree_path}")
-        
-        # Verify the actual git branch DOES NOT have the prefix
-        actual_branch = subprocess.run(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 
-            cwd=expected_worktree_path, 
-            capture_output=True, 
-            text=True, 
-            check=True
-        ).stdout.strip()
-        self.assertEqual(actual_branch, branch_name, "Branch name should NOT be prefixed")
+            self.assertIn(f"new-session -d -s {branch_name}", content)
 
     def test_wts_create(self):
         """Tests the creation of a worktree and tmux session."""
@@ -301,7 +246,7 @@ class TestWtsIntegration(unittest.TestCase):
         # Verify tmux called with correct session name and CWD (should be repo root)
         with open(tmux_log, 'r') as f:
             content = f.read()
-            self.assertIn(f"new-session -d -s {repo_name}-{branch_name}", content)
+            self.assertIn(f"new-session -d -s {branch_name}", content)
             # It should set CWD to self.test_dir
             self.assertIn(f"-c {self.test_dir}", content)
 
@@ -358,8 +303,7 @@ class TestWtsIntegration(unittest.TestCase):
         
         # Get current branch name for verification
         current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=self.test_dir, capture_output=True, text=True, check=True).stdout.strip()
-        repo_name = os.path.basename(self.test_dir)
-        expected_session_name = f"{repo_name}-{current_branch}"
+        expected_session_name = current_branch
 
         # Run wts with -n but NO name
         subprocess.run([sys.executable, WTS_SCRIPT, '-n'], cwd=self.test_dir, env=env, check=True)
@@ -399,8 +343,7 @@ class TestWtsIntegration(unittest.TestCase):
         
         # Verify tmux called with attach-session and correct name
         current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=self.test_dir, capture_output=True, text=True, check=True).stdout.strip()
-        repo_name = os.path.basename(self.test_dir)
-        expected_session_name = f"{repo_name}-{current_branch}"
+        expected_session_name = current_branch
 
         with open(tmux_log, 'r') as f:
             content = f.read()

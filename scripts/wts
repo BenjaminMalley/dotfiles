@@ -14,7 +14,6 @@ def main():
     parser.add_argument("name", nargs="?", help="Branch name or session name")
     parser.add_argument("--done", "-d", action="store_true", help="Clean up current session")
     parser.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
-    parser.add_argument("--no-prefix", action="store_true", help="Do not auto-prefix branch name with username")
     parser.add_argument("--attach", "-a", action="store_true", help="Attach to session if it exists")
     
     args = parser.parse_args()

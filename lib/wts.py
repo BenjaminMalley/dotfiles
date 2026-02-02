@@ -72,6 +72,8 @@ def create_session(args):
     session_name = None
     target_dir = None
 
+    user_prefix = os.environ.get('USER', '').lower()
+
     if in_git:
         repo_toplevel_res = run_command(['git', 'rev-parse', '--show-toplevel'], capture_output=True)
         repo_toplevel = repo_toplevel_res.stdout.strip()
@@ -80,14 +82,23 @@ def create_session(args):
         if not branch_name:
             branch_name_res = run_command(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True)
             branch_name = branch_name_res.stdout.strip()
+            # If already prefixed, try to strip it for the session name
+            if user_prefix and branch_name.startswith(f"{user_prefix}/{repo_name}-"):
+                branch_name = branch_name[len(f"{user_prefix}/{repo_name}-"):]
 
-        session_name = f"{repo_name}-{branch_name}"
+        session_name = branch_name
+        
+        full_branch_name = branch_name
+        if user_prefix:
+            full_branch_name = f"{user_prefix}/{repo_name}-{branch_name}"
+            
         target_dir = Path(repo_toplevel)
     else:
         if not branch_name:
             branch_name = os.path.basename(os.getcwd())
         session_name = branch_name
         target_dir = Path.cwd()
+        full_branch_name = branch_name
 
     if args.attach:
         session_exists_res = subprocess.run(['tmux', 'has-session', '-t', f'={session_name}'], capture_output=True)
@@ -101,14 +112,8 @@ def create_session(args):
 
     # Handle worktree creation
     if in_git and not args.no_worktree:
-        repo_name = os.path.basename(target_dir)
         worktree_path = Path.home() / "worktrees" / repo_name / branch_name
         target_dir = worktree_path
-
-        user_prefix = os.environ.get('USER', '').lower()
-        full_branch_name = branch_name
-        if not args.no_prefix and user_prefix and not branch_name.startswith(f"{user_prefix}/"):
-            full_branch_name = f"{user_prefix}/{branch_name}"
 
         if not worktree_path.exists():
             worktree_path.parent.mkdir(parents=True, exist_ok=True)
@@ -116,8 +121,10 @@ def create_session(args):
             branch_exists = False
             target_branch = full_branch_name
             
+            # Check for the fully prefixed branch first
             if subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{full_branch_name}']).returncode == 0:
                 branch_exists = True
+            # Then check for the unprefixed branch (backward compatibility)
             elif subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{branch_name}']).returncode == 0:
                 branch_exists = True
                 target_branch = branch_name
