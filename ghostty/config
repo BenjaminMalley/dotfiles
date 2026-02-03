@@ -1,3 +1,7 @@
 # Mouse & Links
 # Allow holding Shift to bypass application mouse capture (vital for tmux)
 mouse-shift-capture = true
+
+# Fullscreen
+# Use non-native fullscreen (instant, no animation, no separate Space)
+macos-non-native-fullscreen = true
