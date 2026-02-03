@@ -63,23 +63,59 @@ def handle_gemini_payload(payload_str):
     
     return "{}"
 
+def calculate_claude_line_number(data):
+    """Calculate line number for Claude Edit/Write tools."""
+    tool_name = data.get('tool_name')
+    tool_input = data.get('tool_input', {})
+    file_path = tool_input.get('file_path')
+
+    if tool_name == 'Write':
+        return 1  # New file or full rewrite, start at top
+
+    if tool_name == 'Edit':
+        new_string = tool_input.get('new_string', '')
+        if file_path and new_string:
+            try:
+                with open(file_path, 'r') as f:
+                    first_line = new_string.split('\n')[0]
+                    for i, line in enumerate(f, 1):
+                        if first_line in line:
+                            return i
+            except Exception:
+                pass
+
+    return None  # Fallback: open without line number
+
+
 def handle_claude_payload(payload_str):
     """Processes the Claude hook payload."""
     if not payload_str:
         return "{}"
-        
+
     try:
         data = json.loads(payload_str)
-        cwd = data.get('cwd') or data.get('context', {}).get('cwd', '')
+        event = data.get('hook_event_name', '')
+        cwd = data.get('cwd', '')
         project_name = os.path.basename(cwd) if cwd else 'Claude'
-        
-        # Refresh the editor pane
-        run_local_script('v')
-        
-        # Claude notifications are usually explicit
-        send_notification("Input Required", f"Claude ({project_name})")
+
+        # Handle file edit events - open file at edit location
+        if event == 'PostToolUse' and data.get('tool_name') in ['Edit', 'Write']:
+            tool_input = data.get('tool_input', {})
+            file_path = tool_input.get('file_path')
+            if file_path:
+                line_num = calculate_claude_line_number(data)
+                if line_num:
+                    run_local_script('v', file_path, str(line_num))
+                else:
+                    run_local_script('v', file_path)
+            return "{}"
+
+        # Handle notification/stop events - refresh editor and notify
+        if event in ['Stop', 'Notification']:
+            run_local_script('v')
+            send_notification("Input Required", f"Claude ({project_name})")
 
     except Exception as e:
         sys.stderr.write(f"Error processing Claude payload: {e}\n")
-    
+
     return "{}"

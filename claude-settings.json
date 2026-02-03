@@ -20,6 +20,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/claude-hook-notify"
+          }
+        ]
+      }
     ]
   },
   "model": "anthropic.claude-opus-4-5-20251101-v1:0"
