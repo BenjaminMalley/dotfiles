@@ -301,14 +301,14 @@ class TestWtsIntegration(unittest.TestCase):
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
         
-        # Get current branch name for verification
-        current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=self.test_dir, capture_output=True, text=True, check=True).stdout.strip()
-        expected_session_name = current_branch
+        # Get repo name for verification
+        repo_name = os.path.basename(self.test_dir)
+        expected_session_name = repo_name
 
         # Run wts with -n but NO name
         subprocess.run([sys.executable, WTS_SCRIPT, '-n'], cwd=self.test_dir, env=env, check=True)
         
-        # Verify tmux called with correct session name (should default to current branch)
+        # Verify tmux called with correct session name (should default to repo name)
         with open(tmux_log, 'r') as f:
             content = f.read()
             self.assertIn(f"new-session -d -s {expected_session_name}", content)

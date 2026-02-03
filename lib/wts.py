@@ -79,18 +79,21 @@ def create_session(args):
         repo_toplevel = repo_toplevel_res.stdout.strip()
         repo_name = os.path.basename(repo_toplevel)
 
-        if not branch_name:
-            branch_name_res = run_command(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True)
-            branch_name = branch_name_res.stdout.strip()
-            # If already prefixed, try to strip it for the session name
-            if user_prefix and branch_name.startswith(f"{user_prefix}/{repo_name}-"):
-                branch_name = branch_name[len(f"{user_prefix}/{repo_name}-"):]
+        if args.no_worktree:
+            session_name = branch_name or repo_name
+        else:
+            if not branch_name:
+                branch_name_res = run_command(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True)
+                branch_name = branch_name_res.stdout.strip()
+                # If already prefixed, try to strip it for the session name
+                if user_prefix and branch_name.startswith(f"{user_prefix}/{repo_name}-"):
+                    branch_name = branch_name[len(f"{user_prefix}/{repo_name}-"):]
 
-        session_name = branch_name
-        
-        full_branch_name = branch_name
-        if user_prefix:
-            full_branch_name = f"{user_prefix}/{repo_name}-{branch_name}"
+            session_name = branch_name
+            
+            full_branch_name = branch_name
+            if user_prefix:
+                full_branch_name = f"{user_prefix}/{repo_name}-{branch_name}"
             
         target_dir = Path(repo_toplevel)
     else:
