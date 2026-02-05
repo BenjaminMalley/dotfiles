@@ -59,7 +59,7 @@ def install_dotfiles(args):
         ('.zshrc', '.zshrc'),
         ('.tmux.conf', '.tmux.conf'),
         ('.vimrc', '.vimrc'),
-        ('nvim/init.vim', '.config/nvim/init.vim'),
+        ('nvim', '.config/nvim'),
         ('ghostty/config', '.config/ghostty/config'),
         ('AGENT.md', '.gemini/GEMINI.md'),
         ('AGENT.md', '.claude/CLAUDE.md'),
