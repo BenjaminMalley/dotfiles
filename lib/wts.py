@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+import shlex
 from pathlib import Path
 from lib.utils import run_command
 
@@ -33,6 +34,10 @@ def cleanup_session():
     session_res = run_command(['tmux', 'display-message', '-p', '#S'], capture_output=True)
     session_name = session_res.stdout.strip() if session_res else None
 
+    if not session_name:
+        print("Error: Could not determine current tmux session name.", file=sys.stderr)
+        sys.exit(1)
+
     # Determine if we should remove the worktree
     should_remove_worktree = False
     if worktree_path:
@@ -43,19 +48,30 @@ def cleanup_session():
         except ValueError:
             should_remove_worktree = False
 
+    # Construct the cleanup command
+    # We use ; instead of && to ensure the session is killed even if worktree removal has issues.
+    # We use --force to handle untracked/ignored files.
+    # We use git -C to ensure we have the right context even if we cd / to unlock the directory.
+    quoted_session = shlex.quote(session_name)
     if should_remove_worktree:
+        quoted_path = shlex.quote(str(worktree_path))
+        # Get the main repo path to use with -C
+        common_dir_res = run_command(['git', 'rev-parse', '--git-common-dir'], capture_output=True)
+        main_repo = os.path.dirname(os.path.abspath(common_dir_res.stdout.strip())) if common_dir_res else "."
+        quoted_main_repo = shlex.quote(main_repo)
+        
         print(f"Cleaning up session '{session_name}' and worktree '{worktree_path}'...")
-        cleanup_cmd = f"git worktree remove '{worktree_path}' && tmux kill-session -t '{session_name}'"
+        cleanup_cmd = f"cd / && git -C {quoted_main_repo} worktree remove --force {quoted_path}; tmux kill-session -t {quoted_session}"
     else:
         print(f"Cleaning up session '{session_name}'...")
-        cleanup_cmd = f"tmux kill-session -t '{session_name}'"
+        cleanup_cmd = f"cd / && tmux kill-session -t {quoted_session}"
 
-    # Switch client first
+    # Switch client first to avoid being attached to a session that is about to be killed
     ret = subprocess.run(['tmux', 'switch-client', '-l'], capture_output=True)
     if ret.returncode != 0:
         subprocess.run(['tmux', 'detach-client'], capture_output=True)
     
-    # Queue the cleanup
+    # Queue the cleanup on the tmux server
     run_command(['tmux', 'run-shell', '-b', cleanup_cmd])
 
 def create_session(args):
@@ -75,8 +91,21 @@ def create_session(args):
     user_prefix = os.environ.get('USER', '').lower()
 
     if in_git:
-        repo_toplevel_res = run_command(['git', 'rev-parse', '--show-toplevel'], capture_output=True)
-        repo_toplevel = repo_toplevel_res.stdout.strip()
+        # Get the real repository root, even if we are in a worktree
+        common_dir_res = run_command(['git', 'rev-parse', '--git-common-dir'], capture_output=True)
+        if common_dir_res:
+            common_dir = os.path.abspath(common_dir_res.stdout.strip())
+            # If common_dir is just ".git", we are in the main repo. 
+            # If it's an absolute path ending in .git, we want its parent.
+            if common_dir.endswith('/.git'):
+                repo_toplevel = os.path.dirname(common_dir)
+            else:
+                # In some cases git-common-dir might be the repo root itself if not a .git dir
+                repo_toplevel = common_dir
+        else:
+            repo_toplevel_res = run_command(['git', 'rev-parse', '--show-toplevel'], capture_output=True)
+            repo_toplevel = repo_toplevel_res.stdout.strip()
+            
         repo_name = os.path.basename(repo_toplevel)
 
         if args.no_worktree:
@@ -85,14 +114,17 @@ def create_session(args):
             if not branch_name:
                 branch_name_res = run_command(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True)
                 branch_name = branch_name_res.stdout.strip()
-                # If already prefixed, try to strip it for the session name
-                if user_prefix and branch_name.startswith(f"{user_prefix}/{repo_name}-"):
-                    branch_name = branch_name[len(f"{user_prefix}/{repo_name}-"):]
+                
+            # If the branch name already has the expected prefix, strip it for the session name
+            # Prefix format: {user}/{repo}-{branch}
+            prefix = f"{user_prefix}/{repo_name}-"
+            if user_prefix and branch_name.startswith(prefix):
+                session_name = branch_name[len(prefix):]
+            else:
+                session_name = branch_name
 
-            session_name = branch_name
-            
             full_branch_name = branch_name
-            if user_prefix:
+            if user_prefix and not branch_name.startswith(f"{user_prefix}/"):
                 full_branch_name = f"{user_prefix}/{repo_name}-{branch_name}"
             
         target_dir = Path(repo_toplevel)
