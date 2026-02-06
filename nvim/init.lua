@@ -85,18 +85,19 @@ require("lazy").setup({
         ensure_installed = { "pyright", "jdtls" },
       })
 
-      local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
       -- Python Configuration
-      lspconfig.pyright.setup({
+      vim.lsp.config("pyright", {
         capabilities = capabilities,
-        root_dir = function(fname)
-          -- Prioritize the worktree root
-          return lspconfig.util.root_pattern(".git", "pyproject.toml", "setup.py")(fname)
-            or vim.loop.cwd()
+        root_dir = function(bufnr, on_dir)
+          local fname = vim.api.nvim_buf_get_name(bufnr)
+          local root = require("lspconfig.util").root_pattern(".git", "pyproject.toml", "setup.py")(fname)
+            or vim.uv.cwd()
+          on_dir(root)
         end,
       })
+      vim.lsp.enable("pyright")
 
       -- Global LSP Mappings
       vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = "Hover Documentation" })
