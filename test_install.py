@@ -88,8 +88,13 @@ class TestInstallScript(unittest.TestCase):
         mock_run_command.assert_any_call(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_called_once()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.zshrc')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.tmux.conf')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.vimrc')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'nvim')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'settings.json')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'settings.json')))
 
         claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
         self.assertTrue(os.path.isdir(claude_agents_dir))
@@ -98,6 +103,8 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'scripts')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'scripts')))
 
     @patch('install.run_command')
     @patch('install.set_macos_preferences')
@@ -119,8 +126,13 @@ class TestInstallScript(unittest.TestCase):
         mock_run_command.assert_called_once_with(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.zshrc')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.tmux.conf')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.vimrc')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'ghostty', 'config')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'nvim')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'settings.json')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'settings.json')))
 
         claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
         self.assertTrue(os.path.isdir(claude_agents_dir))
@@ -129,6 +141,8 @@ class TestInstallScript(unittest.TestCase):
 
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'GEMINI.md')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'CLAUDE.md')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'scripts')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'scripts')))
 
     def test_symlink_gitconfig_with_existing_file(self):
         """Test symlinking with an existing file at the destination."""

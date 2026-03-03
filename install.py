@@ -63,6 +63,8 @@ def install_dotfiles(args):
         ('ghostty/config', '.config/ghostty/config'),
         ('gemini-settings.json', '.gemini/settings.json'),
         ('claude-settings.json', '.claude/settings.json'),
+        ('AGENT.md', '.gemini/GEMINI.md'),
+        ('AGENT.md', '.claude/CLAUDE.md'),
     ]
 
     for source, dest in DOTFILES:
