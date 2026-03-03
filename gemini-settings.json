@@ -5,12 +5,7 @@
   "checkpointing": {
     "enabled": true
   },
-  "hideBanner": true,
-  "ideMode": true,
-  "preferredEditor": "zed",
-  "selectedAuthType": "oauth-personal",
   "theme": "Default",
-  "vimMode": true,
   "model": {
     "name": "gemini-3-flash-preview"
   },
@@ -20,7 +15,9 @@
     }
   },
   "general": {
-    "previewFeatures": true
+    "previewFeatures": true,
+    "preferredEditor": "vim",
+    "vimMode": true
   },
   "tools": {
     "approvalMode": "auto_edit",

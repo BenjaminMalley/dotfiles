@@ -61,8 +61,6 @@ def install_dotfiles(args):
         ('.vimrc', '.vimrc'),
         ('nvim', '.config/nvim'),
         ('ghostty/config', '.config/ghostty/config'),
-        ('AGENT.md', '.gemini/GEMINI.md'),
-        ('AGENT.md', '.claude/CLAUDE.md'),
         ('gemini-settings.json', '.gemini/settings.json'),
         ('claude-settings.json', '.claude/settings.json'),
     ]
