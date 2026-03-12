@@ -49,7 +49,7 @@ def refresh_editor(filename=None, line=None):
     # Find target pane and editor info
     target_pane_id, foreground_cmd, editor_on_tty = get_other_pane_info()
     
-    if not target_pane_id:
+    if not target_pane_id or foreground_cmd is None:
         print("Error: Could not find another pane in the current tmux window.", file=sys.stderr)
         return False
         
@@ -90,8 +90,12 @@ def refresh_editor(filename=None, line=None):
                 cmds.append(['tmux', 'send-keys', '-t', target_pane_id, f':{line}', 'Enter'])
         
     # Execute commands
-    for cmd in cmds:
-        subprocess.run(cmd, check=True)
+    try:
+        for cmd in cmds:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f"Error executing tmux command: {e}\n")
+        return False
     
     return True
 
