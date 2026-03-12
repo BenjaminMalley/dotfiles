@@ -12,7 +12,7 @@ def run_local_script(script_name, *args):
     repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     script_path = os.path.join(repo_root, 'scripts', script_name)
     try:
-        subprocess.run([script_path, *args], check=False)
+        subprocess.run([script_path, *args], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         sys.stderr.write(f"Error running {script_name}: {e}\n")
 
