@@ -199,6 +199,7 @@ def create_session(args):
         run_command(['tmux', 'select-pane', '-t', f'{session_name}:0.0'])
 
     if 'TMUX' in os.environ:
+        run_command(['tmux', 'refresh-client', '-S'])
         os.execvp('tmux', ['tmux', 'switch-client', '-t', session_name])
     else:
         os.execvp('tmux', ['tmux', 'attach-session', '-t', session_name])
