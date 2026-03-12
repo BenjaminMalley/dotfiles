@@ -66,13 +66,12 @@ def cleanup_session():
         print(f"Cleaning up session '{session_name}'...")
         cleanup_cmd = f"cd / && tmux kill-session -t {quoted_session}"
 
-    # Switch client first to avoid being attached to a session that is about to be killed
-    ret = subprocess.run(['tmux', 'switch-client', '-l'], capture_output=True)
-    if ret.returncode != 0:
-        subprocess.run(['tmux', 'detach-client'], capture_output=True)
-    
     # Queue the cleanup on the tmux server
-    run_command(['tmux', 'run-shell', '-b', cleanup_cmd])
+    # We use -b to run in the background on the server.
+    # The command will first cd to / to ensure no process is using the worktree directory.
+    # Then it will remove the worktree and finally kill the session.
+    # We include refresh-client -S as well to ensure the UI is clean for the switched client.
+    run_command(['tmux', 'run-shell', '-b', f"{cleanup_cmd}; tmux refresh-client -S"])
 
 def create_session(args):
     """Core logic to create or attach to a worktree/tmux session."""
