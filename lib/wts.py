@@ -130,7 +130,9 @@ class WtsManager:
         
         # Initial layout
         run_command(['tmux', 'rename-window', '-t', f'{self.session_name}:0', 'Agent'])
+        run_command(['tmux', 'select-pane', '-t', f'{self.session_name}:0.0', '-T', 'Agent'])
         run_command(['tmux', 'split-window', '-h', '-t', f'{self.session_name}:0', '-c', str(self.target_dir)])
+        run_command(['tmux', 'select-pane', '-t', f'{self.session_name}:0.1', '-T', 'Editor'])
         run_command(['tmux', 'send-keys', '-t', f'{self.session_name}:0.1', 'nvim .', 'Enter'])
         
         agent_cmd = os.environ.get('WTS_AGENT_CMD')
