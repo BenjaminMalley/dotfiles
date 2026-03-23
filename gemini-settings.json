@@ -26,7 +26,6 @@
     }
   },
   "tools": {
-    "approvalMode": "auto_edit",
     "allowed": [
       "run_shell_command(*)"
     ]
