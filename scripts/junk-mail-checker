@@ -1,0 +1,216 @@
+#!/usr/bin/env python3
+import subprocess
+import os
+import sys
+
+REPORT_FILE = "junk_report.txt"
+
+def run_osascript(script):
+    try:
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=True)
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        if e.stderr:
+            print(f"Error running osascript: {e.stderr}", file=sys.stderr)
+        return ""
+
+def main():
+    print("Searching for messages in Junk/Spam mailboxes...")
+    
+    # 1. Get list of all message IDs in Junk mailboxes across all accounts
+    # Format: AccountName|||ID
+    get_ids_script = '''
+    set idList to {}
+    tell application "Mail"
+        repeat with eachAccount in accounts
+            set accountName to name of eachAccount
+            set possibleMailboxes to {"Junk", "Spam"}
+            
+            try
+                set theMailbox to junk mailbox of eachAccount
+                set theMessages to messages of theMailbox
+                repeat with aMessage in theMessages
+                    set end of idList to accountName & "|||ID|||" & (id of aMessage as string)
+                end repeat
+            on error
+                repeat with mName in possibleMailboxes
+                    try
+                        set theMailbox to mailbox mName of eachAccount
+                        set theMessages to messages of theMailbox
+                        repeat with aMessage in theMessages
+                            set end of idList to accountName & "|||ID|||" & (id of aMessage as string)
+                        end repeat
+                        exit repeat
+                    end try
+                end repeat
+            end try
+        end repeat
+    end tell
+    set AppleScript's text item delimiters to "|||MSG|||"
+    return idList as string
+    '''
+    
+    ids_output = run_osascript(get_ids_script)
+    if not ids_output:
+        print("No messages found in Junk mailboxes.")
+        return
+
+    msg_pairs = [p.strip() for p in ids_output.split('|||MSG|||')]
+    
+    with open(REPORT_FILE, 'w') as f:
+        f.write(f"Junk Mail Classification Report\n")
+        f.write("==================================================\n")
+
+    junk_count = 0
+    not_junk_count = 0
+
+    for pair in msg_pairs:
+        if not pair: continue
+        
+        if '|||ID|||' not in pair: continue
+        account_name, msg_id = pair.split('|||ID|||', 1)
+        
+        print(f"Processing Account: {account_name}, ID: {msg_id}...")
+        
+        # 2. Fetch subject and content
+        get_msg_script = f'''
+        tell application "Mail"
+            set theAccount to account "{account_name}"
+            set theMessage to missing value
+            
+            try
+                set theMailbox to junk mailbox of theAccount
+                set theMessage to (first message of theMailbox whose id is {msg_id})
+            on error
+                set possibleMailboxes to {{"Junk", "Spam"}}
+                repeat with mName in possibleMailboxes
+                    try
+                        set theMailbox to mailbox mName of theAccount
+                        set theMessage to (first message of theMailbox whose id is {msg_id})
+                        exit repeat
+                    end try
+                end repeat
+            end try
+            
+            if theMessage is not missing value then
+                return (subject of theMessage) & "|||SEP|||" & (content of theMessage)
+            else
+                return ""
+            end if
+        end tell
+        '''
+        
+        msg_data = run_osascript(get_msg_script)
+        if not msg_data or "|||SEP|||" not in msg_data:
+            continue
+            
+        subject, content = msg_data.split("|||SEP|||", 1)
+        
+        # 3. Call gemini-cli
+        prompt = f"""You are an expert email filter. Given the following email details, determine if it is 'Junk' (spam, marketing, unwanted) or 'Not Junk' (personal, transactional, important). Respond with ONLY 'Junk' or 'Not Junk'.
+
+Subject: {subject}
+Content:
+{content}"""
+
+        try:
+            gemini_proc = subprocess.run(['gemini'], input=prompt, capture_output=True, text=True, check=True)
+            classification = gemini_proc.stdout.strip()
+        except Exception as e:
+            classification = f"Error: {e}"
+
+        # Log to file
+        with open(REPORT_FILE, 'a') as f:
+            f.write("--------------------------------------------------\n")
+            f.write(f"Account: {account_name} (ID: {msg_id})\n")
+            f.write(f"Subject: {subject}\n")
+            f.write(f"Classification: {classification}\n")
+
+        if "Not Junk" in classification:
+            not_junk_count += 1
+            # 4. Move to Inbox
+            print(f"Moving to Inbox: {subject}")
+            action_script = f'''
+            tell application "Mail"
+                try
+                    set theAccount to account "{account_name}"
+                    set theInbox to mailbox "INBOX" of theAccount
+                    set theMessage to missing value
+                    
+                    try
+                        set theMailbox to junk mailbox of theAccount
+                        set theMessage to (first message of theMailbox whose id is {msg_id})
+                    on error
+                        set possibleMailboxes to {{"Junk", "Spam"}}
+                        repeat with mName in possibleMailboxes
+                            try
+                                set theMailbox to mailbox mName of theAccount
+                                set theMessage to (first message of theMailbox whose id is {msg_id})
+                                exit repeat
+                            end try
+                        end repeat
+                    end try
+                    
+                    if theMessage is not missing value then
+                        move theMessage to theInbox
+                    end if
+                on error errMsg
+                    return "Error: " & errMsg
+                end try
+            end tell
+            '''
+            result = run_osascript(action_script)
+            if result and result.startswith("Error:"):
+                print(f"Failed to move message: {result}")
+        else:
+            junk_count += 1
+            # 4. Delete Junk
+            print(f"Deleting Junk: {subject}")
+            action_script = f'''
+            tell application "Mail"
+                try
+                    set theAccount to account "{account_name}"
+                    set theMessage to missing value
+                    
+                    try
+                        set theMailbox to junk mailbox of theAccount
+                        set theMessage to (first message of theMailbox whose id is {msg_id})
+                    on error
+                        set possibleMailboxes to {{"Junk", "Spam"}}
+                        repeat with mName in possibleMailboxes
+                            try
+                                set theMailbox to mailbox mName of theAccount
+                                set theMessage to (first message of theMailbox whose id is {msg_id})
+                                exit repeat
+                            end try
+                        end repeat
+                    end try
+                    
+                    if theMessage is not missing value then
+                        delete theMessage
+                    end if
+                on error errMsg
+                    return "Error: " & errMsg
+                end try
+            end tell
+            '''
+            result = run_osascript(action_script)
+            if result and result.startswith("Error:"):
+                print(f"Failed to delete message: {result}")
+
+    summary = f"""
+==================================================
+SUMMARY
+Total Messages Scanned: {junk_count + not_junk_count}
+Junk: {junk_count}
+Not Junk: {not_junk_count}
+==================================================
+"""
+    print(summary)
+    with open(REPORT_FILE, 'a') as f:
+        f.write(summary)
+    
+    print(f"Report saved to: {REPORT_FILE}")
+
+if __name__ == "__main__":
+    main()
