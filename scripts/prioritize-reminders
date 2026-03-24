@@ -1,0 +1,175 @@
+#!/usr/bin/env swift
+import Foundation
+import EventKit
+
+// --- Reminders Fetcher ---
+class RemindersFetcher {
+    private let eventStore = EKEventStore()
+    
+    func fetchTodayReminders(completion: @escaping ([EKReminder]?) -> Void) {
+        let completionHandler: (Bool, Error?) -> Void = { granted, error in
+            guard granted && error == nil else {
+                print("Error: Reminders access denied or failed: \(String(describing: error))")
+                exit(1)
+            }
+            
+            let calendar = Calendar.current
+            let now = Date()
+            let todayAtMidnight = calendar.startOfDay(for: now)
+            guard let tomorrowAtMidnight = calendar.date(byAdding: .day, value: 1, to: todayAtMidnight) else {
+                completion(nil)
+                return
+            }
+            
+            let calendars = self.eventStore.calendars(for: .reminder)
+            let predicate = self.eventStore.predicateForReminders(in: calendars)
+            
+            self.eventStore.fetchReminders(matching: predicate) { reminders in
+                let filtered = reminders?.filter { reminder in
+                    guard !reminder.isCompleted else { return false }
+                    guard let dueDateComponents = reminder.dueDateComponents,
+                          let dueDate = calendar.date(from: dueDateComponents) else {
+                        return false
+                    }
+                    
+                    // Filter by assignment: if there are attendees, at least one must be the current user
+                    if let attendees = reminder.attendees, !attendees.isEmpty {
+                        let assignedToMe = attendees.contains(where: { $0.isCurrentUser })
+                        if !assignedToMe {
+                            return false
+                        }
+                    }
+                    
+                    return dueDate < tomorrowAtMidnight
+                }
+                
+                let sorted = filtered?.sorted { (r1, r2) -> Bool in
+                    let d1 = calendar.date(from: r1.dueDateComponents!) ?? Date.distantFuture
+                    let d2 = calendar.date(from: r2.dueDateComponents!) ?? Date.distantFuture
+                    return d1 < d2
+                }
+                
+                completion(sorted)
+            }
+        }
+
+        if #available(macOS 14.0, *) {
+            eventStore.requestFullAccessToReminders(completion: completionHandler)
+        } else {
+            eventStore.requestAccess(to: .reminder, completion: completionHandler)
+        }
+    }
+}
+
+func getPriorityLabel(_ priority: Int) -> String {
+    switch priority {
+    case 1...4: return "High"
+    case 5: return "Medium"
+    case 6...9: return "Low"
+    default: return "None"
+    }
+}
+
+func extractTags(from text: String) -> [String] {
+    let regex = try? NSRegularExpression(pattern: "#[\\w\\d-]+", options: [])
+    let nsText = text as NSString
+    let matches = regex?.matches(in: text, options: [], range: NSRange(location: 0, length: nsText.length))
+    return matches?.map { nsText.substring(with: $0.range) } ?? []
+}
+
+// --- Main Execution ---
+let fetcher = RemindersFetcher()
+let semaphore = DispatchSemaphore(value: 0)
+
+fetcher.fetchTodayReminders { reminders in
+    defer { semaphore.signal() }
+    
+    guard let reminders = reminders, !reminders.isEmpty else {
+        print("No reminders found for today or past due.")
+        return
+    }
+    
+    print("Found \(reminders.count) reminders. Enriching metadata...")
+    
+    let formatter = DateFormatter()
+    formatter.dateStyle = .long
+    formatter.timeStyle = .short
+
+    var remindersText = ""
+    for (index, r) in reminders.enumerated() {
+        let title = r.title ?? "Untitled"
+        let list = r.calendar.title
+        let notes = r.notes ?? ""
+        
+        // Extract tags from title and notes
+        var tags = extractTags(from: title)
+        tags.append(contentsOf: extractTags(from: notes))
+        let uniqueTags = Array(Set(tags))
+        
+        // Handle Assignee (Attendees)
+        let assignees = r.attendees?.compactMap { p -> String? in
+            let name = p.name ?? p.url.absoluteString
+            return p.isCurrentUser ? "Me" : name
+        } ?? []
+        
+        remindersText += "[\(index + 1)] Title: \(title)\n"
+        if let dueDateComponents = r.dueDateComponents,
+           let dueDate = Calendar.current.date(from: dueDateComponents) {
+            remindersText += "    Due: \(formatter.string(from: dueDate))\n"
+        }
+        remindersText += "    List: \(list)\n"
+        remindersText += "    Priority: \(getPriorityLabel(r.priority)) (\(r.priority))\n"
+        
+        if !uniqueTags.isEmpty {
+            remindersText += "    Tags: \(uniqueTags.joined(separator: ", "))\n"
+        }
+        
+        if !assignees.isEmpty {
+            remindersText += "    Assignees: \(assignees.joined(separator: ", "))\n"
+        }
+        
+        if !notes.isEmpty {
+            remindersText += "    Notes: \(notes.trimmingCharacters(in: .whitespacesAndNewlines))\n"
+        }
+        remindersText += "\n"
+    }
+    
+    let prompt = """
+    You are a personal productivity assistant. Below is a list of my reminders that are due today or overdue. 
+    Please analyze them and prioritize the top 10 highest priority items based on their urgency, importance, and any provided notes/tags.
+
+    Output only the prioritized list of top 10 items. 
+    For each item, provide:
+    1. Title
+    2. Due Date
+    3. Notes (if any)
+    4. List Name
+    5. Why it was prioritized
+
+    Current date/time: \(formatter.string(from: Date()))
+
+    REMINDERS:
+    \(remindersText)
+    """
+    
+    print("Sending \(reminders.count) reminders to Gemini...")
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    process.arguments = ["gemini", "-p", ""]
+    
+    let pipe = Pipe()
+    process.standardInput = pipe
+    
+    do {
+        try process.run()
+        if let data = prompt.data(using: .utf8) {
+            pipe.fileHandleForWriting.write(data)
+        }
+        pipe.fileHandleForWriting.closeFile()
+        process.waitUntilExit()
+    } catch {
+        print("Error: Failed to run 'gemini' command: \(error)")
+    }
+}
+
+semaphore.wait()
