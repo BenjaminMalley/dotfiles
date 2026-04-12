@@ -31,6 +31,21 @@ def set_terminal_profile_setting(profile, key, type, value):
         # If set fails, it probably doesn't exist, so try to add it
         run_command(['/usr/libexec/PlistBuddy', '-c', f"Add {path} {type} {value}", plist])
 
+def set_night_shift():
+    """Sets Night Shift to Sunset to Sunrise and default temperature."""
+    print("Setting Night Shift preferences (Sunset to Sunrise, default temperature)...")
+    # Using JXA to call private CoreBrightness framework
+    # Mode 1 is Sunset to Sunrise, Strength 0.5 is middle
+    jxa_script = (
+        'ObjC.import("Foundation"); '
+        'var b = $.NSBundle.bundleWithPath("/System/Library/PrivateFrameworks/CoreBrightness.framework"); '
+        'b.load; '
+        'var client = $.NSClassFromString("CBBlueLightClient").alloc.init; '
+        'client.setMode(1); '
+        'client.setStrengthCommit(0.5, true);'
+    )
+    run_command(['osascript', '-l', 'JavaScript', '-e', jxa_script], check=False)
+
 def set_macos_preferences():
     """Sets macOS preferences."""
     if not is_darwin():
@@ -92,6 +107,9 @@ def set_macos_preferences():
         set_terminal_profile_setting(profile, "shellExitAction", "integer", "1")
         set_terminal_profile_setting(profile, "BackgroundAlphaInactive", "real", "0.5")
         set_terminal_profile_setting(profile, "BackgroundSettingsForInactiveWindows", "bool", "true")
+
+    # --- Night Shift ---
+    set_night_shift()
 
     # --- Sound (Immediate) ---
     run_command(['osascript', '-e', 'set volume alert volume 0'])
