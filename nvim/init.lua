@@ -4,6 +4,9 @@ vim.cmd('source ~/.vimrc')
 -- Faster completion and diagnostic feedback
 vim.opt.updatetime = 300
 
+-- Clear search highlights on Escape
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = "Clear search highlights" })
+
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
