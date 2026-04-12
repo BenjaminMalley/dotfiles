@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import time
 
 class VRefresher:
     """Encapsulates the logic for refreshing an editor in a tmux pane."""
@@ -102,19 +103,32 @@ class VRefresher:
 
         self.pane_content = self._get_pane_content(self.target_pane_id)
 
-        cmds = []
         # Attempt to 'fg' if in shell and editor is on TTY
         if self.editor_on_tty and not self.is_editor_foreground:
             if not any(msg in self.pane_content for msg in ["job not found", "no current job"]):
                 if any(s in self.foreground_cmd for s in self.SHELLS):
-                    cmds.append(['tmux', 'send-keys', '-t', self.target_pane_id, f'fg %{self.editor_on_tty}', 'Enter'])
-                    self.is_editor_foreground = True
+                    fg_cmd = [['tmux', 'send-keys', '-t', self.target_pane_id, f'fg %{self.editor_on_tty}', 'Enter']]
+                    if self.dry_run:
+                        print(f"Would attempt to fg %{self.editor_on_tty}")
+                        self.is_editor_foreground = True # Assume success for dry-run
+                    else:
+                        if not self._execute(fg_cmd):
+                            return False
+                        
+                        # Wait a moment for the shell to process the job switch
+                        time.sleep(0.1)
+                        
+                        # Re-verify foreground state
+                        if not self.select_target_pane() or not self.is_editor_foreground:
+                            sys.stderr.write(f"Error: Failed to foreground {self.editor_on_tty} or lost pane. Aborting to avoid command pollution.\n")
+                            return False
 
         # Safety Check: Abort if we are about to send editor keys to a non-editor/non-shell
         if self.filename and not self.is_editor_foreground and not any(s in self.foreground_cmd for s in self.SHELLS):
             sys.stderr.write(f"Warning: Foreground command '{self.foreground_cmd}' is not an editor or shell. Aborting.\n")
             return False
 
+        cmds = []
         if self.is_editor_foreground:
             cmds.extend(self._get_editor_cmds())
         elif self.filename and any(s in self.foreground_cmd for s in self.SHELLS):
