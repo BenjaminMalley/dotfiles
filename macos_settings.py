@@ -85,6 +85,8 @@ def set_macos_preferences():
         # Terminal
         ('com.apple.Terminal', 'VisualBell', '-bool', 'false'),
         ('com.apple.Terminal', 'AudibleBell', '-bool', 'false'),
+        # Appearance
+        ('NSGlobalDomain', 'AppleInterfaceStyle', '-string', 'Dark'),
     ]
 
     for domain, key, type_arg, value in SETTINGS:
