@@ -1,0 +1,28 @@
+root = true
+
+[*]
+indent_style = tab
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Python strictly prefers spaces (PEP 8)
+[*.py]
+indent_style = space
+indent_size = 4
+
+# YAML forbids tabs entirely
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
+
+# Often these formats prefer spaces for better cross-tool consistency
+[*.{json,js,ts,jsx,tsx}]
+indent_style = space
+indent_size = 2
+
+# Makefiles REQUIRE tabs
+[Makefile]
+indent_style = tab

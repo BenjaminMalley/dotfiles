@@ -70,10 +70,30 @@ def install_dotfiles(args):
     for source, dest in DOTFILES:
         symlink_resource(source, dest)
 
+    process_optional_dotfiles(args)
+
     symlink_agent_files()
     symlink_scripts()
 
     reload_tmux()
+
+def process_optional_dotfiles(args):
+    """Handles installation of optional dotfiles."""
+    if args.skip_optional:
+        return
+
+    optional_dotfiles = [
+        ('.editorconfig', '.editorconfig', "global editorconfig file"),
+    ]
+
+    for source, dest, description in optional_dotfiles:
+        if not args.yes:
+            response = input(f"Do you want to install optional {description}? (y/n) ")
+            if response.lower() != 'y':
+                continue
+        
+        print(f"Installing {description}...")
+        symlink_resource(source, dest)
 
 def process_optional_software(brewfile_opt, auto_yes):
     """Handles installation of optional software from Brewfile.opt."""
