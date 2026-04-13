@@ -33,5 +33,5 @@
       }
     ]
   },
-  "vimMode": true
+  "editorMode": "vim"
 }
