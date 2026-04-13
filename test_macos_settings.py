@@ -21,6 +21,8 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.dock', 'autohide', '-bool', 'true'])
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.finder', 'AppleShowAllFiles', '-bool', 'true'])
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'AppleInterfaceStyle', '-string', 'Dark'])
+        mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'AppleICUForce24HourTime', '-bool', 'true'])
+        mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.menuextra.clock', 'DateFormat', '-string', 'EEE d MMM HH:mm:ss'])
 
         # Check sound settings
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.feedback', '-int', '0'])
