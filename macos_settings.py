@@ -87,6 +87,9 @@ def set_macos_preferences():
         ('com.apple.Terminal', 'AudibleBell', '-bool', 'false'),
         # Appearance
         ('NSGlobalDomain', 'AppleInterfaceStyle', '-string', 'Dark'),
+        # Clock / Time
+        ('NSGlobalDomain', 'AppleICUForce24HourTime', '-bool', 'true'),
+        ('com.apple.menuextra.clock', 'DateFormat', '-string', 'EEE d MMM HH:mm:ss'),
     ]
 
     for domain, key, type_arg, value in SETTINGS:
