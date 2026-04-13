@@ -95,6 +95,7 @@ class TestInstallScript(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'nvim')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'settings.json')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'settings.json')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.editorconfig')))
 
         claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
         self.assertTrue(os.path.isdir(claude_agents_dir))
@@ -108,8 +109,9 @@ class TestInstallScript(unittest.TestCase):
 
     @patch('install.run_command')
     @patch('install.set_macos_preferences')
+    @patch('builtins.input', return_value='y')
     @patch('platform.system', return_value='Linux')
-    def test_install_linux(self, mock_system, mock_set_macos, mock_run_command):
+    def test_install_linux(self, mock_system, mock_input, mock_set_macos, mock_run_command):
         """Test the install script on Linux."""
         # Arrange
         agents_dir = os.path.join(os.path.dirname(__file__), 'agents')
@@ -133,6 +135,7 @@ class TestInstallScript(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.config', 'nvim')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gemini', 'settings.json')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.claude', 'settings.json')))
+        self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.editorconfig')))
 
         claude_agents_dir = os.path.join(self.temp_dir, '.claude', 'agents')
         self.assertTrue(os.path.isdir(claude_agents_dir))
