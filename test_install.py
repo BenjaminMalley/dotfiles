@@ -125,7 +125,7 @@ class TestInstallScript(unittest.TestCase):
 
         # Assert
         expected_tmux_reload = 'if tmux info &>/dev/null; then tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'
-        mock_run_command.assert_called_once_with(['/bin/bash', '-c', expected_tmux_reload], check=False)
+        mock_run_command.assert_any_call(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_not_called()
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.gitconfig')))
         self.assertTrue(os.path.islink(os.path.join(self.temp_dir, '.zshrc')))
@@ -167,6 +167,28 @@ class TestInstallScript(unittest.TestCase):
 
         source_path = os.path.abspath(os.path.join(os.path.dirname(install.__file__), 'gitconfig'))
         self.assertEqual(os.path.realpath(destination_path), source_path)
+
+    @patch('install.run_command')
+    @patch('os.path.exists')
+    def test_install_tpm(self, mock_exists, mock_run_command):
+        """Test that TPM is installed if it doesn't exist."""
+        # Case 1: TPM does not exist
+        mock_exists.side_effect = lambda x: False if 'tpm' in x else True
+        
+        install.install_tpm()
+        
+        tpm_dir = os.path.expanduser('~/.tmux/plugins/tpm')
+        mock_run_command.assert_any_call(['git', 'clone', 'https://github.com/tmux-plugins/tpm', tpm_dir])
+        
+        # Case 2: TPM already exists
+        mock_run_command.reset_mock()
+        mock_exists.side_effect = lambda x: True if 'tpm' in x else True
+        
+        install.install_tpm()
+        
+        # Should not call git clone
+        for call_args in mock_run_command.call_args_list:
+            self.assertNotIn('git', call_args[0][0])
 
 if __name__ == '__main__':
     unittest.main()

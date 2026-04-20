@@ -74,8 +74,24 @@ def install_dotfiles(args):
 
     symlink_agent_files()
     symlink_scripts()
+    install_tpm()
 
     reload_tmux()
+
+def install_tpm():
+    """Installs Tmux Plugin Manager (TPM) if it is not already installed."""
+    tpm_dir = os.path.expanduser('~/.tmux/plugins/tpm')
+    if not os.path.exists(tpm_dir):
+        print("Installing Tmux Plugin Manager (TPM)...")
+        run_command(['git', 'clone', 'https://github.com/tmux-plugins/tpm', tpm_dir])
+        
+        # Automatically install plugins after cloning TPM
+        install_plugins_script = os.path.join(tpm_dir, 'bin', 'install_plugins')
+        if os.path.exists(install_plugins_script):
+            print("Installing tmux plugins...")
+            run_command([install_plugins_script])
+    else:
+        print("Tmux Plugin Manager (TPM) is already installed.")
 
 def process_optional_dotfiles(args):
     """Handles installation of optional dotfiles."""
