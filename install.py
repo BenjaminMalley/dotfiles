@@ -56,6 +56,7 @@ def install_dotfiles(args):
     print("Symlinking dotfiles...")
     DOTFILES = [
         ('gitconfig', '.gitconfig'),
+        ('gitignore_global', '.gitignore_global'),
         ('.zshrc', '.zshrc'),
         ('.tmux.conf', '.tmux.conf'),
         ('.vimrc', '.vimrc'),
