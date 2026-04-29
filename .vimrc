@@ -58,6 +58,13 @@ if !has('nvim')
   endif
 endif
 
+" Use system clipboard
+" This allows 'y' to copy to the system clipboard and 'p' to paste from it.
+" Note: When mouse=a is enabled, you can hold the 'Option' key (macOS)
+" or 'Shift' key while dragging to bypass Vim's mouse capture and select
+" text directly in the terminal for Cmd+C.
+set clipboard=unnamedplus
+
 " Fix visual artifacts in tmux (background color erase issues)
 if &term =~ '256color'
   set t_ut=
