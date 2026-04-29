@@ -1,6 +1,12 @@
 # Mouse & Links
 # Allow holding Shift to bypass application mouse capture (vital for tmux)
 mouse-shift-capture = true
+# Automatically copy to system clipboard when selecting text (with bypass key)
+copy-on-select = true
+
+# Clipboard
+clipboard-read = allow
+clipboard-write = allow
 
 # Fullscreen
 # Use non-native fullscreen (instant, no animation, no separate Space)
