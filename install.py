@@ -77,7 +77,16 @@ def install_dotfiles(args):
     symlink_scripts()
     install_tpm()
 
+    configure_applications()
+
     reload_tmux()
+
+def configure_applications():
+    """Configures applications like GH CLI."""
+    print("Configuring applications...")
+    # --- GH CLI ---
+    # We use check=False to avoid failing if gh is not installed
+    run_command(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
 
 def install_tpm():
     """Installs Tmux Plugin Manager (TPM) if it is not already installed and installs plugins."""

@@ -117,9 +117,6 @@ def set_macos_preferences():
     set_shortcut(TILE_LEFT_ID, LEFT_ARROW, MODIFIERS)
     set_shortcut(TILE_RIGHT_ID, RIGHT_ARROW, MODIFIERS)
 
-    # --- GH CLI ---
-    run_command(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
-
     # --- Terminal Profiles ---
     for profile in ["Basic", "Pro", "Clear Dark"]:
         set_terminal_profile_setting(profile, "shellExitAction", "integer", "1")
