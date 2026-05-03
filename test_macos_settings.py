@@ -23,6 +23,8 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'AppleInterfaceStyle', '-string', 'Dark'])
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'AppleICUForce24HourTime', '-bool', 'true'])
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.menuextra.clock', 'DateFormat', '-string', 'EEE d MMM HH:mm:ss'])
+        mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.Spotlight', 'ClipboardHistoryEnabled', '-bool', 'true'])
+        mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.Spotlight', 'ClipboardHistoryRetention', '-int', '2592000'])
 
         # Check sound settings
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.feedback', '-int', '0'])
@@ -40,6 +42,7 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['killall', 'Dock'], check=False)
         mock_run_command.assert_any_call(['killall', 'Finder'], check=False)
         mock_run_command.assert_any_call(['killall', 'WindowManager'], check=False)
+        mock_run_command.assert_any_call(['killall', 'Spotlight'], check=False)
 
 if __name__ == '__main__':
     unittest.main()
