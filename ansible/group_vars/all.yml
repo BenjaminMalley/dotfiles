@@ -21,6 +21,37 @@ macos_services_to_restart:
   - SystemUIServer
   - Spotlight
 
+homebrew_formulae:
+  - cmake
+  - dnsmasq
+  - fd
+  - fzf
+  - gemini-cli
+  - jdtls
+  - neovim
+  - ripgrep
+  - tmux
+  - wget
+
+homebrew_casks:
+  - anki
+  - container
+  - ghostty
+
+optional_homebrew_formulae:
+  - gh
+
+optional_homebrew_casks:
+  - crossover
+  - dolphin
+  - steam
+  - valhalla-supermassive
+  - retroarch-metal
+  - stremio
+  - ilok-license-manager
+  - blackhole-2ch
+  - iina
+
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]
 terminal_settings:
   - { key: "shellExitAction", type: "integer", value: "1" }
