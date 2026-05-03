@@ -4,11 +4,28 @@
   register: brew_update
   failed_when: brew_update is failed and 'Could not update' not in brew_update.msg
 
-- name: Install packages from Brewfile
-  community.general.homebrew_bundle:
-    file: "{{ playbook_dir }}/../Brewfile"
+- name: Install Homebrew formulae
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ homebrew_formulae }}"
 
-- name: Install optional packages from Brewfile.opt
-  community.general.homebrew_bundle:
-    file: "{{ playbook_dir }}/../Brewfile.opt"
+- name: Install Homebrew casks
+  community.general.homebrew_cask:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ homebrew_casks }}"
+
+- name: Install optional Homebrew formulae
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ optional_homebrew_formulae }}"
+  when: install_optional | default(false) | bool
+
+- name: Install optional Homebrew casks
+  community.general.homebrew_cask:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ optional_homebrew_casks }}"
   when: install_optional | default(false) | bool
