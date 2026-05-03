@@ -20,17 +20,6 @@
           }
         ]
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/scripts/claude-hook-notify"
-          }
-        ]
-      }
     ]
   },
   "editorMode": "vim"
