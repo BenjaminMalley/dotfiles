@@ -90,6 +90,9 @@ def set_macos_preferences():
         # Clock / Time
         ('NSGlobalDomain', 'AppleICUForce24HourTime', '-bool', 'true'),
         ('com.apple.menuextra.clock', 'DateFormat', '-string', 'EEE d MMM HH:mm:ss'),
+        # Spotlight Clipboard History (macOS 16+)
+        ('com.apple.Spotlight', 'ClipboardHistoryEnabled', '-bool', 'true'),
+        ('com.apple.Spotlight', 'ClipboardHistoryRetention', '-int', '2592000'), # 30 days
     ]
 
     for domain, key, type_arg, value in SETTINGS:
@@ -119,8 +122,8 @@ def set_macos_preferences():
     # --- Sound (Immediate) ---
     run_command(['osascript', '-e', 'set volume alert volume 0'])
 
-    print("Reloading system services (Dock, Finder, etc.)...")
-    SERVICES = ['Dock', 'Finder', 'WindowManager', 'SystemUIServer']
+    print("Reloading system services (Dock, Finder, Spotlight, etc.)...")
+    SERVICES = ['Dock', 'Finder', 'WindowManager', 'SystemUIServer', 'Spotlight']
     for service in SERVICES:
         run_command(['killall', service], check=False)
 
