@@ -34,8 +34,6 @@ class TestMacOSSettingsScript(unittest.TestCase):
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.sound.beep.volume', '-float', '0'])
         mock_run_command.assert_any_call(['osascript', '-e', 'set volume alert volume 0'])
 
-        mock_run_command.assert_any_call(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
-
         # Terminal profile settings (checking a few)
         # Note: In the refactored code, set_terminal_profile_setting calls run_command twice if Set fails.
         # Here we just verify that it was called at least once with the expected arguments and proper quoting.

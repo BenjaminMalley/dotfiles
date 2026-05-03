@@ -84,6 +84,7 @@ class TestInstallScript(unittest.TestCase):
         for expected_call in expected_optional_calls:
             mock_run_command.assert_any_call(*expected_call.args, **expected_call.kwargs)
 
+        mock_run_command.assert_any_call(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
         expected_tmux_reload = 'if tmux info &>/dev/null; then tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'
         mock_run_command.assert_any_call(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_called_once()
@@ -125,6 +126,7 @@ class TestInstallScript(unittest.TestCase):
         install.install_dotfiles(args)
 
         # Assert
+        mock_run_command.assert_any_call(['gh', 'config', 'set', 'prompt', 'disabled'], check=False)
         expected_tmux_reload = 'if tmux info &>/dev/null; then tmux set-hook -ug client-attached; tmux set-hook -ug pane-focus-in; tmux set-option -g status-right ""; tmux source-file ~/.tmux.conf; echo "Tmux config reloaded."; else echo "Tmux not running, skipping reload."; fi'
         mock_run_command.assert_any_call(['/bin/bash', '-c', expected_tmux_reload], check=False)
         mock_set_macos.assert_not_called()
