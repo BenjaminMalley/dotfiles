@@ -26,6 +26,7 @@
     }
   },
   "tools": {
+    "useRipgrep": true,
     "allowed": [
       "run_shell_command(*)"
     ]
