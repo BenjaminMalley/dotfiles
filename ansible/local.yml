@@ -15,6 +15,9 @@
     - name: Install Dotfiles
       ansible.builtin.include_tasks: tasks/dotfiles.yml
 
+    - name: Configure SSH
+      ansible.builtin.include_tasks: tasks/ssh.yml
+
     - name: Install Tmux Plugin Manager
       ansible.builtin.include_tasks: tasks/tpm.yml
 
