@@ -1,0 +1,79 @@
+- name: Set macOS preferences
+  community.general.osx_defaults:
+    domain: "{{ item.domain }}"
+    key: "{{ item.key }}"
+    type: "{{ item.type }}"
+    value: "{{ item.value }}"
+  loop:
+    - { domain: 'NSGlobalDomain', key: 'com.apple.swipescrolldirection', type: 'bool', value: false }
+    - { domain: 'com.apple.dock', key: 'autohide', type: 'bool', value: true }
+    - { domain: 'com.apple.dock', key: 'autohide-delay', type: 'float', value: 0 }
+    - { domain: 'NSGlobalDomain', key: '_HIHideMenuBar', type: 'bool', value: true }
+    - { domain: 'NSGlobalDomain', key: 'KeyRepeat', type: 'int', value: 2 }
+    - { domain: 'NSGlobalDomain', key: 'InitialKeyRepeat', type: 'int', value: 12 }
+    - { domain: 'NSGlobalDomain', key: 'AppleKeyboardUIMode', type: 'int', value: 3 }
+    - { domain: 'NSGlobalDomain', key: 'NSAutomaticSpellingCorrectionEnabled', type: 'bool', value: false }
+    - { domain: 'NSGlobalDomain', key: 'NSAutomaticCapitalizationEnabled', type: 'bool', value: false }
+    - { domain: 'NSGlobalDomain', key: 'NSAutomaticQuoteSubstitutionEnabled', type: 'bool', value: false }
+    - { domain: 'NSGlobalDomain', key: 'NSAutomaticDashSubstitutionEnabled', type: 'bool', value: false }
+    - { domain: 'com.apple.WindowManager', key: 'GloballyEnabled', type: 'bool', value: true }
+    - { domain: 'com.apple.finder', key: 'AppleShowAllFiles', type: 'bool', value: true }
+    - { domain: 'NSGlobalDomain', key: 'AppleShowAllExtensions', type: 'bool', value: true }
+    - { domain: 'com.apple.finder', key: 'ShowStatusBar', type: 'bool', value: true }
+    - { domain: 'com.apple.finder', key: 'ShowPathbar', type: 'bool', value: true }
+    - { domain: 'NSGlobalDomain', key: 'com.apple.sound.beep.feedback', type: 'int', value: 0 }
+    - { domain: 'NSGlobalDomain', key: 'com.apple.sound.beep.volume', type: 'float', value: 0 }
+    - { domain: 'com.apple.Terminal', key: 'VisualBell', type: 'bool', value: false }
+    - { domain: 'com.apple.Terminal', key: 'AudibleBell', type: 'bool', value: false }
+    - { domain: 'NSGlobalDomain', key: 'AppleInterfaceStyle', type: 'string', value: 'Dark' }
+    - { domain: 'NSGlobalDomain', key: 'AppleICUForce24HourTime', type: 'bool', value: true }
+    - { domain: 'com.apple.menuextra.clock', key: 'DateFormat', type: 'string', value: 'EEE d MMM HH:mm:ss' }
+    - { domain: 'com.apple.Spotlight', key: 'ClipboardHistoryEnabled', type: 'bool', value: true }
+    - { domain: 'com.apple.Spotlight', key: 'ClipboardHistoryRetention', type: 'int', value: 2592000 }
+  notify: Restart macOS services
+
+- name: Set keyboard shortcuts
+  ansible.builtin.shell: |
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add {{ item.id }} "
+    <dict>
+        <key>enabled</key><true/>
+        <key>value</key><dict>
+            <key>type</key><string>standard</string>
+            <key>parameters</key><array>
+                <integer>65535</integer>
+                <integer>{{ item.keycode }}</integer>
+                <integer>{{ item.modifiers }}</integer>
+            </array>
+        </dict>
+    </dict>"
+  loop:
+    - { id: 118, keycode: 123, modifiers: 1703936 } # Tile Left
+    - { id: 119, keycode: 124, modifiers: 1703936 } # Tile Right
+  changed_when: true
+
+- name: Set Night Shift
+  ansible.builtin.shell: |
+    osascript -l JavaScript -e '
+      ObjC.import("Foundation");
+      var b = $.NSBundle.bundleWithPath("/System/Library/PrivateFrameworks/CoreBrightness.framework");
+      b.load;
+      var client = $.NSClassFromString("CBBlueLightClient").alloc.init;
+      client.setMode(1);
+      client.setStrengthCommit(0.5, true);'
+  changed_when: false
+
+- name: Set Terminal profile settings
+  ansible.builtin.shell: |
+    plist=~/Library/Preferences/com.apple.Terminal.plist
+    path=':"Window Settings":"{{ item.0 }}":{{ item.1.key }}'
+    if ! /usr/libexec/PlistBuddy -c "Print $path" "$plist" >/dev/null 2>&1; then
+      /usr/libexec/PlistBuddy -c "Add $path {{ item.1.type }} {{ item.1.value }}" "$plist"
+    else
+      /usr/libexec/PlistBuddy -c "Set $path {{ item.1.value }}" "$plist"
+    fi
+  loop: "{{ terminal_profiles | product(terminal_settings) | list }}"
+  changed_when: true
+
+- name: Set alert volume to 0
+  ansible.builtin.command: osascript -e 'set volume alert volume 0'
+  changed_when: false

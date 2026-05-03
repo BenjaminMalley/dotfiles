@@ -1,0 +1,28 @@
+dotfiles:
+  - { source: "gitconfig", dest: ".gitconfig" }
+  - { source: "gitignore_global", dest: ".gitignore_global" }
+  - { source: ".zshrc", dest: ".zshrc" }
+  - { source: ".tmux.conf", dest: ".tmux.conf" }
+  - { source: ".vimrc", dest: ".vimrc" }
+  - { source: "nvim", dest: ".config/nvim" }
+  - { source: "ghostty/config", dest: ".config/ghostty/config" }
+  - { source: "gemini-settings.json", dest: ".gemini/settings.json" }
+  - { source: "claude-settings.json", dest: ".claude/settings.json" }
+  - { source: "AGENT.md", dest: ".gemini/GEMINI.md" }
+  - { source: "AGENT.md", dest: ".claude/CLAUDE.md" }
+
+optional_dotfiles:
+  - { source: ".editorconfig", dest: ".editorconfig", description: "global editorconfig file" }
+
+macos_services_to_restart:
+  - Dock
+  - Finder
+  - WindowManager
+  - SystemUIServer
+  - Spotlight
+
+terminal_profiles: ["Basic", "Pro", "Clear Dark"]
+terminal_settings:
+  - { key: "shellExitAction", type: "integer", value: "1" }
+  - { key: "BackgroundAlphaInactive", type: "real", value: "0.5" }
+  - { key: "BackgroundSettingsForInactiveWindows", type: "bool", value: "true" }

@@ -12,15 +12,15 @@ class TestDotfilesScript(unittest.TestCase):
         os.chmod(script_path, 0o755)
 
         result = subprocess.run(
-            [sys.executable, script_path, '--help'],
+            [script_path, '--help'],
             capture_output=True,
             text=True
         )
 
         self.assertEqual(result.returncode, 0)
-        self.assertIn("usage: dotfiles", result.stdout)
-        self.assertIn("--skip-optional", result.stdout)
-        self.assertIn("--yes", result.stdout)
+        # ansible-playbook help output
+        self.assertIn("ansible-playbook", result.stdout)
+        self.assertIn("--help", result.stdout)
 
 if __name__ == '__main__':
     unittest.main()
