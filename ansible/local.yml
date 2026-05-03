@@ -1,0 +1,38 @@
+- name: Local Environment Setup
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  tasks:
+    - name: Ensure Homebrew packages are installed
+      ansible.builtin.include_tasks: tasks/packages.yml
+      when: ansible_os_family == "Darwin"
+
+    - name: Configure macOS settings
+      ansible.builtin.include_tasks: tasks/macos.yml
+      when: ansible_os_family == "Darwin"
+
+    - name: Install Dotfiles
+      ansible.builtin.include_tasks: tasks/dotfiles.yml
+
+    - name: Install Tmux Plugin Manager
+      ansible.builtin.include_tasks: tasks/tpm.yml
+
+    - name: Finalize configuration
+      ansible.builtin.shell: |
+        gh config set prompt disabled
+        if tmux info &>/dev/null; then
+          tmux set-hook -ug client-attached;
+          tmux set-hook -ug pane-focus-in;
+          tmux set-option -g status-right "";
+          tmux source-file {{ ansible_user_dir }}/.tmux.conf;
+        fi
+      changed_when: false
+      failed_when: false
+
+  handlers:
+    - name: Restart macOS services
+      ansible.builtin.command: "killall {{ item }}"
+      loop: "{{ macos_services_to_restart }}"
+      changed_when: true
+      failed_when: false

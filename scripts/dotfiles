@@ -1,19 +1,4 @@
-#!/usr/bin/env python3
-import sys
-import os
-import argparse
-
-# Add the repository root to sys.path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-repo_root = os.path.dirname(current_dir)
-sys.path.insert(0, repo_root)
-
-from install import install_dotfiles
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Install dotfiles and software.")
-    parser.add_argument('--skip-optional', action='store_true', help="Skip optional software installation.")
-    parser.add_argument('--yes', '-y', action='store_true', help="Answer yes to all prompts.")
-    args = parser.parse_args()
-
-    install_dotfiles(args)
+#!/bin/bash
+# Wrapper for the new Ansible-based installation process
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+"$repo_root/bootstrap.sh" "$@"

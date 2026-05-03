@@ -5,7 +5,7 @@ Personal configuration files for a high-performance development environment on m
 ## Installation
 
 ```bash
-python3 install.py
+./bootstrap.sh
 ```
 
 This will symlink the dotfiles, install Homebrew and software (on macOS), and set up agent configuration for Gemini and Claude.

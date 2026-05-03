@@ -1,0 +1,14 @@
+- name: Update Homebrew
+  community.general.homebrew:
+    update_homebrew: true
+  register: brew_update
+  failed_when: brew_update is failed and 'Could not update' not in brew_update.msg
+
+- name: Install packages from Brewfile
+  community.general.homebrew_bundle:
+    file: "{{ playbook_dir }}/../Brewfile"
+
+- name: Install optional packages from Brewfile.opt
+  community.general.homebrew_bundle:
+    file: "{{ playbook_dir }}/../Brewfile.opt"
+  when: install_optional | default(false) | bool

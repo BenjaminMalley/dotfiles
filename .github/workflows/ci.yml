@@ -1,4 +1,4 @@
-name: Python CI
+name: CI
 
 on:
   push:
@@ -12,11 +12,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y tmux
-      - name: Run tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmux
+          pip install ansible ansible-lint
+          ansible-galaxy collection install community.general
+
+      - name: Run Python tests
         run: python3 -m unittest discover -v
+
+      - name: Ansible Syntax Check
+        run: ansible-playbook ansible/local.yml -i localhost, --syntax-check
+
+      - name: Ansible Lint
+        run: |
+          # Skip experimental rules and rules that are too strict for local config
+          ansible-lint --skip-list args,fqcn[action-core],yaml[line-length],jinja[spacing],risky-file-permissions ansible/local.yml
+
+      - name: Ansible Dry Run (Check Mode)
+        run: ansible-playbook ansible/local.yml -i localhost, --check -e "ansible_user_dir=$HOME"
