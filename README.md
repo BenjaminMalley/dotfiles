@@ -8,11 +8,12 @@ Personal configuration files for a high-performance development environment on m
 ./bootstrap.sh
 ```
 
-This will symlink the dotfiles, install Homebrew and software (on macOS), and set up agent configuration for Gemini and Claude.
+This will symlink the dotfiles, install Homebrew and software (on macOS), and set up configurations.
+** Note: The script assumes a working `python3` **
 
 ## Neovim Cheatsheet
 
-Your Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`** for fuzzy finding.
+Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`** for fuzzy finding.
 
 ### General
 - **Leader Key**: `` (default)
@@ -73,7 +74,7 @@ Your Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-
 
 ## Git Shortcuts
 
-Your `gitconfig` includes several helpful aliases for common workflows:
+`gitconfig` includes several helpful aliases for common workflows:
 
 - **`git rb`**: Rebase your current branch against the default branch (e.g., `main` or `master`) after fetching from `origin`.
 - **`git rst`**: Hard reset your current branch to match the `origin` default branch (warning: discards local changes).
