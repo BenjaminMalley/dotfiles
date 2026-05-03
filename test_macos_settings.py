@@ -17,6 +17,9 @@ class TestMacOSSettingsScript(unittest.TestCase):
         macos_settings.set_macos_preferences()
 
         # Assert
+        # Check if backup was attempted
+        mock_run_command.assert_any_call(['/usr/bin/defaults', 'export', 'com.apple.symbolichotkeys', unittest.mock.ANY], check=False)
+        
         mock_run_command.assert_any_call(['defaults', 'write', 'NSGlobalDomain', 'com.apple.swipescrolldirection', '-bool', 'false'])
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.dock', 'autohide', '-bool', 'true'])
         mock_run_command.assert_any_call(['defaults', 'write', 'com.apple.finder', 'AppleShowAllFiles', '-bool', 'true'])
