@@ -2,6 +2,15 @@ import os
 import sys
 from lib.utils import run_command, is_darwin
 
+def backup_shortcuts():
+    """Backs up the current keyboard shortcuts if no backup exists."""
+    backup_path = os.path.expanduser('~/.symbolichotkeys.backup.plist')
+    if os.path.exists(backup_path):
+        return
+    print(f"Backing up keyboard shortcuts to {backup_path}...")
+    # Use export to create a proper backup file
+    run_command(['/usr/bin/defaults', 'export', 'com.apple.symbolichotkeys', backup_path], check=False)
+
 def set_shortcut(action_id, key_code, modifiers):
     """Sets a keyboard shortcut."""
     shortcut_plist = f"""
@@ -99,6 +108,7 @@ def set_macos_preferences():
         run_command(['defaults', 'write', domain, key, type_arg, value])
 
     # --- Keyboard Shortcuts ---
+    backup_shortcuts()
     MODIFIERS = 1703936
     LEFT_ARROW = 123
     RIGHT_ARROW = 124
