@@ -28,6 +28,7 @@ homebrew_formulae:
   - fzf
   - gemini-cli
   - jdtls
+  - jq
   - neovim
   - ripgrep
   - tmux
