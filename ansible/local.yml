@@ -8,6 +8,10 @@
       ansible.builtin.include_tasks: tasks/packages.yml
       when: ansible_os_family == "Darwin"
 
+    - name: Manage background services
+      ansible.builtin.include_tasks: tasks/services.yml
+      when: ansible_os_family == "Darwin"
+
     - name: Configure macOS settings
       ansible.builtin.include_tasks: tasks/macos.yml
       when: ansible_os_family == "Darwin"
