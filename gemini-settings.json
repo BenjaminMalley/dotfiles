@@ -16,7 +16,8 @@
   },
   "general": {
     "previewFeatures": true,
-    "preferredEditor": "vim",
+    "preferredEditor": "nvim",
+    "enableNotifications": true,
     "vimMode": true,
     "defaultApprovalMode": "auto_edit",
     "sessionRetention": {
