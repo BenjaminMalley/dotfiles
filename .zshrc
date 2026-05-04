@@ -1,3 +1,5 @@
+export PATH="/opt/homebrew/bin:$PATH"
+
 # Add dotfiles scripts to PATH
 if [[ -L "$HOME/.zshrc" ]]; then
     DOTFILES_DIR=$(dirname "$(readlink "$HOME/.zshrc")")
