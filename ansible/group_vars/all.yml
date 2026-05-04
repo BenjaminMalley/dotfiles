@@ -28,7 +28,6 @@ homebrew_formulae:
   - fzf
   - gemini-cli
   - jdtls
-  - jq
   - neovim
   - ripgrep
   - tmux
@@ -43,15 +42,16 @@ optional_homebrew_formulae:
   - gh
 
 optional_homebrew_casks:
+  - blackhole-2ch
   - crossover
   - dolphin
-  - steam
-  - valhalla-supermassive
-  - retroarch-metal
-  - stremio
-  - ilok-license-manager
-  - blackhole-2ch
   - iina
+  - ilok-license-manager
+  - retroarch-metal
+  - steam
+  - stremio
+  - valhalla-supermassive
+  - vlc
 
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]
 terminal_settings:
