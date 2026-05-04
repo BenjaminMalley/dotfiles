@@ -23,6 +23,7 @@ macos_services_to_restart:
 
 homebrew_formulae:
   - cmake
+  - container
   - dnsmasq
   - fd
   - fzf
@@ -35,7 +36,6 @@ homebrew_formulae:
 
 homebrew_casks:
   - anki
-  - container
   - ghostty
 
 optional_homebrew_formulae:
