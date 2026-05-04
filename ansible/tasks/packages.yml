@@ -8,18 +8,21 @@
   community.general.homebrew:
     name: "{{ item }}"
     state: present
+    upgrade: true
   loop: "{{ homebrew_formulae }}"
 
 - name: Install Homebrew casks
   community.general.homebrew_cask:
     name: "{{ item }}"
     state: present
+    upgrade: true
   loop: "{{ homebrew_casks }}"
 
 - name: Install optional Homebrew formulae
   community.general.homebrew:
     name: "{{ item }}"
     state: present
+    upgrade: true
   loop: "{{ optional_homebrew_formulae }}"
   when: install_optional | default(false) | bool
 
@@ -27,5 +30,6 @@
   community.general.homebrew_cask:
     name: "{{ item }}"
     state: present
+    upgrade: true
   loop: "{{ optional_homebrew_casks }}"
   when: install_optional | default(false) | bool
