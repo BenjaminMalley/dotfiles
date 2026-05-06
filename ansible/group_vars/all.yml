@@ -24,7 +24,6 @@ macos_services_to_restart:
 homebrew_formulae:
   - cmake
   - container
-  - dnsmasq
   - fd
   - fzf
   - gemini-cli
