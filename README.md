@@ -1,6 +1,6 @@
 # Dotfiles
 
-Personal configuration files for a high-performance development environment on macOS and Linux.
+Personal configuration files for macOS (and Linux sort of)
 
 ## Installation
 
