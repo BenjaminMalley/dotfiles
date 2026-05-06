@@ -1,8 +1,6 @@
 - name: Start Homebrew services
   community.general.homebrew_services:
     name: "{{ item }}"
-    state: started
-    run_at_load: true
+    state: present
   loop:
-    - dnsmasq
     - container
