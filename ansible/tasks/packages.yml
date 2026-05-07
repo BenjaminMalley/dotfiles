@@ -33,3 +33,8 @@
     upgrade: true
   loop: "{{ optional_homebrew_casks }}"
   when: install_optional | default(false) | bool
+
+- name: Remove unused Homebrew dependencies (autoremove)
+  ansible.builtin.command: brew autoremove
+  register: brew_autoremove
+  changed_when: brew_autoremove.stdout != ""
