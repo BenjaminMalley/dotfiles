@@ -7,6 +7,7 @@
     - .config/ghostty
     - .config/nvim
     - .gemini
+    - .gemini/policies
     - .claude/agents
 
 - name: Symlink standard dotfiles
@@ -34,6 +35,15 @@
     force: true
   with_fileglob:
     - "{{ playbook_dir }}/../agents/*"
+
+- name: Symlink gemini policies
+  ansible.builtin.file:
+    src: "{{ item }}"
+    dest: "{{ ansible_user_dir }}/.gemini/policies/{{ item | basename }}"
+    state: link
+    force: true
+  with_fileglob:
+    - "{{ playbook_dir }}/../gemini/policies/*"
 
 - name: Symlink scripts directory
   ansible.builtin.file:
