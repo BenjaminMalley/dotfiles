@@ -28,37 +28,5 @@
   },
   "tools": {
     "useRipgrep": true
-  },
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.gemini/scripts/gemini-hook-notify"
-          }
-        ]
-      }
-    ],
-    "AfterAgent": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.gemini/scripts/gemini-hook-notify"
-          }
-        ]
-      }
-    ],
-    "AfterTool": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.gemini/scripts/gemini-hook-notify"
-          }
-        ]
-      }
-    ]
   }
 }
