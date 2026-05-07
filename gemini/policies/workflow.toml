@@ -1,0 +1,30 @@
+[[rule]]
+toolName = "replace"
+decision = "allow"
+priority = 100
+description = "Allow surgical file edits"
+
+[[rule]]
+toolName = "write_file"
+decision = "allow"
+priority = 100
+description = "Allow writing new files"
+
+[[rule]]
+toolName = "read_file"
+decision = "allow"
+priority = 100
+description = "Allow reading files for context"
+
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = "git commit.*"
+decision = "ask_user"
+priority = 200
+description = "Confirm before committing changes"
+
+[[rule]]
+toolName = "run_shell_command"
+decision = "ask_user"
+priority = 50
+description = "Require approval for all other shell commands"

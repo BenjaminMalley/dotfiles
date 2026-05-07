@@ -1,0 +1,20 @@
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = "rm -rf /"
+decision = "deny"
+priority = 999
+description = "Prevent accidental deletion of root directory"
+
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = "rm -rf .git"
+decision = "ask_user"
+priority = 900
+description = "Confirm before deleting .git directory"
+
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = "curl .* | bash"
+decision = "ask_user"
+priority = 800
+description = "Confirm before executing remote scripts"

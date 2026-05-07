@@ -27,10 +27,7 @@
     }
   },
   "tools": {
-    "useRipgrep": true,
-    "allowed": [
-      "run_shell_command(*)"
-    ]
+    "useRipgrep": true
   },
   "hooks": {
     "Notification": [
