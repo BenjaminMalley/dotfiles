@@ -6,15 +6,15 @@
   tasks:
     - name: Ensure Homebrew packages are installed
       ansible.builtin.include_tasks: tasks/packages.yml
-      when: ansible_os_family == "Darwin"
+      when: ansible_facts['os_family'] == "Darwin"
 
     - name: Manage background services
       ansible.builtin.include_tasks: tasks/services.yml
-      when: ansible_os_family == "Darwin"
+      when: ansible_facts['os_family'] == "Darwin"
 
     - name: Configure macOS settings
       ansible.builtin.include_tasks: tasks/macos.yml
-      when: ansible_os_family == "Darwin"
+      when: ansible_facts['os_family'] == "Darwin"
 
     - name: Install Dotfiles
       ansible.builtin.include_tasks: tasks/dotfiles.yml
@@ -32,7 +32,7 @@
           tmux set-hook -ug client-attached;
           tmux set-hook -ug pane-focus-in;
           tmux set-option -g status-right "";
-          tmux source-file {{ ansible_user_dir }}/.tmux.conf;
+          tmux source-file {{ ansible_facts['user_dir'] }}/.tmux.conf;
         fi
       changed_when: false
       failed_when: false

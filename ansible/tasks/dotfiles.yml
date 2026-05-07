@@ -1,6 +1,6 @@
 - name: Create dotfile directories
   ansible.builtin.file:
-    path: "{{ ansible_user_dir }}/{{ item }}"
+    path: "{{ ansible_facts['user_dir'] }}/{{ item }}"
     state: directory
     mode: "0755"
   loop:
@@ -13,7 +13,7 @@
 - name: Symlink standard dotfiles
   ansible.builtin.file:
     src: "{{ playbook_dir }}/../{{ item.source }}"
-    dest: "{{ ansible_user_dir }}/{{ item.dest }}"
+    dest: "{{ ansible_facts['user_dir'] }}/{{ item.dest }}"
     state: link
     force: true
   loop: "{{ dotfiles }}"
@@ -21,7 +21,7 @@
 - name: Symlink optional dotfiles
   ansible.builtin.file:
     src: "{{ playbook_dir }}/../{{ item.source }}"
-    dest: "{{ ansible_user_dir }}/{{ item.dest }}"
+    dest: "{{ ansible_facts['user_dir'] }}/{{ item.dest }}"
     state: link
     force: true
   loop: "{{ optional_dotfiles }}"
@@ -30,7 +30,7 @@
 - name: Symlink agent files
   ansible.builtin.file:
     src: "{{ item }}"
-    dest: "{{ ansible_user_dir }}/.claude/agents/{{ item | basename }}"
+    dest: "{{ ansible_facts['user_dir'] }}/.claude/agents/{{ item | basename }}"
     state: link
     force: true
   with_fileglob:
@@ -39,7 +39,7 @@
 - name: Symlink gemini policies
   ansible.builtin.file:
     src: "{{ item }}"
-    dest: "{{ ansible_user_dir }}/.gemini/policies/{{ item | basename }}"
+    dest: "{{ ansible_facts['user_dir'] }}/.gemini/policies/{{ item | basename }}"
     state: link
     force: true
   with_fileglob:
@@ -48,7 +48,7 @@
 - name: Symlink scripts directory
   ansible.builtin.file:
     src: "{{ playbook_dir }}/../scripts"
-    dest: "{{ ansible_user_dir }}/{{ item }}/scripts"
+    dest: "{{ ansible_facts['user_dir'] }}/{{ item }}/scripts"
     state: link
     force: true
   loop:
