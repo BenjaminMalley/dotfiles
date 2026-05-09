@@ -1,33 +1,32 @@
 import sys
-import os
+import subprocess
+import platform
 
 def send_notification(message="The command has finished.", title="Gemini"):
     """
-    Sends a desktop notification using the OSC 777 sequence.
-    This implementation assumes terminal support and handles tmux passthrough.
-    Writes to stderr to avoid corrupting stdout in hook scripts.
+    Sends a desktop notification.
+    On macOS, it uses osascript. On other systems, it prints to stdout with a bell.
     """
-    # Escape semicolons as they are delimiters in OSC 777
-    safe_title = title.replace(';', ':')
-    safe_message = message.replace(';', ':')
-    
-    # OSC 777 format: \033]777;notify;TITLE;MESSAGE\a
-    # \033 is ESC, \a is BEL (\007)
-    osc_body = f"777;notify;{safe_title};{safe_message}\a"
-    
-    if 'TMUX' in os.environ:
-        # Wrap for tmux passthrough: \033Ptmux;\033\033]...
-        # Every \033 (ESC) in the inner sequence must be doubled.
-        # The sequence must end with the tmux terminator \033\\
-        sequence = f"\033Ptmux;\033\033]{osc_body}\033\\"
-    else:
-        sequence = f"\033]{osc_body}"
+    system = platform.system()
+
+    if system == 'Darwin':
+        # Escape double quotes for AppleScript
+        safe_message = message.replace('"', '\\"')
+        safe_title = title.replace('"', '\\"')
         
-    sys.stderr.write(sequence)
-    sys.stderr.flush()
+        script = f'display notification "{safe_message}" with title "{safe_title}" sound name "Glass"'
+        try:
+            subprocess.run(['osascript', '-e', script], check=True)
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write(f"Error sending notification: {e}\n")
+    else:
+        # Fallback for other systems
+        sys.stdout.write('\a')
+        print(f"Notification: {title} - {message}")
 
 def main():
     """Entry point for the notify CLI script."""
     message = sys.argv[1] if len(sys.argv) > 1 else "The command has finished."
     title = sys.argv[2] if len(sys.argv) > 2 else "Gemini"
     send_notification(message, title)
+
