@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>PayloadDescription</key>
+            <string>Configures Background Task Management Rules</string>
+            <key>PayloadDisplayName</key>
+            <string>Service Management - Managed Login Items</string>
+            <key>PayloadIdentifier</key>
+            <string>com.dotfiles.managedloginitems</string>
+            <key>PayloadType</key>
+            <string>com.apple.servicemanagement</string>
+            <key>PayloadUUID</key>
+            <string>A3DE68A0-4FC4-4F70-82E3-81A49485FDE7</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>Rules</key>
+            <array>
+                {% for item in managed_login_items %}
+                <dict>
+                    <key>RuleType</key>
+                    <string>{{ item.type }}</string>
+                    <key>RuleValue</key>
+                    <string>{{ item.value }}</string>
+                    <key>Disposition</key>
+                    <string>{{ item.disposition | default('Disallowed') }}</string>
+                    {% if item.comment is defined %}
+                    <key>Comment</key>
+                    <string>{{ item.comment }}</string>
+                    {% endif %}
+                </dict>
+                {% endfor %}
+            </array>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>Dotfiles - Managed Background Items</string>
+    <key>PayloadIdentifier</key>
+    <string>com.dotfiles.config.loginitems</string>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>40FACF4D-521F-4DDE-BCD7-726BF1AB5F76</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>
