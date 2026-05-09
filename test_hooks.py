@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 import os
 import sys
 import json
@@ -12,27 +12,21 @@ from lib.notifications import send_notification
 from lib.hooks import handle_gemini_payload, handle_claude_payload
 
 class TestNotifications(unittest.TestCase):
-    @patch.dict('os.environ', {}, clear=True)
-    def test_send_notification_standard(self):
-        with patch('sys.stderr', new=io.StringIO()) as fake_err:
-            send_notification("Hello", "Title")
-            output = fake_err.getvalue()
-            # OSC 777 sequence: \033]777;notify;Title;Hello\a
-            self.assertEqual(output, "\033]777;notify;Title;Hello\a")
+    @patch('platform.system', return_value='Darwin')
+    @patch('subprocess.run')
+    def test_send_notification_macos(self, mock_run, mock_system):
+        send_notification("Hello", "Title")
+        mock_run.assert_called_once()
+        args, _ = mock_run.call_args
+        self.assertIn('osascript', args[0])
+        self.assertIn('Hello', args[0][2])
 
-    @patch.dict('os.environ', {'TMUX': '/tmp/tmux-1000/default,1234,0'})
-    def test_send_notification_tmux(self):
-        with patch('sys.stderr', new=io.StringIO()) as fake_err:
+    @patch('platform.system', return_value='Linux')
+    def test_send_notification_linux(self, mock_system):
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
             send_notification("Hello", "Title")
-            output = fake_err.getvalue()
-            # Wrapped OSC 777 sequence for tmux: \033Ptmux;\033\033]777;notify;Title;Hello\a\033\\
-            self.assertEqual(output, "\033Ptmux;\033\033]777;notify;Title;Hello\a\033\\")
-
-    def test_send_notification_escape_semicolon(self):
-        with patch('sys.stderr', new=io.StringIO()) as fake_err:
-            send_notification("Hello; World", "Title; Test")
-            output = fake_err.getvalue()
-            self.assertIn("Title: Test;Hello: World", output)
+            output = fake_out.getvalue()
+            self.assertIn('Notification: Title - Hello', output)
 
 class TestHooks(unittest.TestCase):
     @patch('lib.hooks.run_local_script')

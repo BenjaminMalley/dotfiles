@@ -17,8 +17,7 @@
   "general": {
     "previewFeatures": true,
     "preferredEditor": "nvim",
-    "enableNotifications": false,
-    "notificationMethod": "osc9",
+    "enableNotifications": true,
     "vimMode": true,
     "defaultApprovalMode": "auto_edit",
     "sessionRetention": {
