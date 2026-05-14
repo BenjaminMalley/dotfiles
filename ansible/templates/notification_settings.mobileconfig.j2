@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>PayloadDescription</key>
+            <string>Configures Global Notification Settings</string>
+            <key>PayloadDisplayName</key>
+            <string>Notification Center - Global Settings</string>
+            <key>PayloadIdentifier</key>
+            <string>com.dotfiles.notifications.global</string>
+            <key>PayloadType</key>
+            <string>com.apple.ManagedClient.preferences</string>
+            <key>PayloadUUID</key>
+            <string>B6E7E9A0-4FC4-4F70-82E3-81A49485FDE7</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>PayloadContent</key>
+            <dict>
+                <key>com.apple.ncprefs</key>
+                <dict>
+                    <key>Forced</key>
+                    <array>
+                        <dict>
+                            <key>mcx_preference_settings</key>
+                            <dict>
+                                <key>content_visibility</key>
+                                <integer>{{ notification_global_settings.content_visibility | default(1) }}</integer>
+                                <key>allow_notifications_on_lock_screen</key>
+                                <{{ notification_global_settings.allow_notifications_on_lock_screen | default(true) | string | lower }}/>
+                                <key>allow_notifications_when_sleeping</key>
+                                <{{ notification_global_settings.allow_notifications_when_sleeping | default(false) | string | lower }}/>
+                                <key>allow_notifications_when_mirroring</key>
+                                <{{ notification_global_settings.allow_notifications_when_mirroring | default(false) | string | lower }}/>
+                            </dict>
+                        </dict>
+                    </array>
+                </dict>
+            </dict>
+        </dict>
+        <dict>
+            <key>PayloadDescription</key>
+            <string>Configures Per-Application Notification Settings</string>
+            <key>PayloadDisplayName</key>
+            <string>Notification Center - App Settings</string>
+            <key>PayloadIdentifier</key>
+            <string>com.dotfiles.notifications.apps</string>
+            <key>PayloadType</key>
+            <string>com.apple.notificationsettings</string>
+            <key>PayloadUUID</key>
+            <string>C7F8F0B1-5GD5-5G81-93F4-92B50596GEF8</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>NotificationSettings</key>
+            <array>
+                {% for app in notification_app_settings %}
+                <dict>
+                    <key>BundleIdentifier</key>
+                    <string>{{ app.bundle_id }}</string>
+                    <key>NotificationsEnabled</key>
+                    <{{ app.enabled | default(true) | string | lower }}/>
+                    {% if app.show_in_notification_center is defined %}
+                    <key>ShowInNotificationCenter</key>
+                    <{{ app.show_in_notification_center | string | lower }}/>
+                    {% endif %}
+                    {% if app.show_in_lock_screen is defined %}
+                    <key>ShowInLockScreen</key>
+                    <{{ app.show_in_lock_screen | string | lower }}/>
+                    {% endif %}
+                    {% if app.alert_type is defined %}
+                    <key>AlertType</key>
+                    <integer>{{ app.alert_type }}</integer>
+                    {% endif %}
+                    {% if app.badges_enabled is defined %}
+                    <key>BadgesEnabled</key>
+                    <{{ app.badges_enabled | string | lower }}/>
+                    {% endif %}
+                    {% if app.sounds_enabled is defined %}
+                    <key>SoundsEnabled</key>
+                    <{{ app.sounds_enabled | string | lower }}/>
+                    {% endif %}
+                    {% if app.critical_alert_enabled is defined %}
+                    <key>CriticalAlertEnabled</key>
+                    <{{ app.critical_alert_enabled | string | lower }}/>
+                    {% endif %}
+                </dict>
+                {% endfor %}
+            </array>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>Dotfiles - Notification Settings</string>
+    <key>PayloadIdentifier</key>
+    <string>com.dotfiles.config.notifications</string>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>51GBAF4E-632G-5EEF-CDE8-837CG2BC6G87</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>

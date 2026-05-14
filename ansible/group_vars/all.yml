@@ -62,6 +62,39 @@ managed_login_items:
   - { type: "TeamIdentifier", value: "MXGJJ98X76", comment: "Steam", disposition: "Disallowed" }
 
 manage_login_items: false
+manage_notification_settings: false
 install_packages: true
 configure_system_audio: true
 configure_night_shift: true
+
+notification_global_settings:
+  content_visibility: 1 # When Unlocked
+  allow_notifications_on_lock_screen: true
+  allow_notifications_when_sleeping: false
+  allow_notifications_when_mirroring: false
+
+notification_app_settings:
+  - bundle_id: "com.apple.AppStore"
+    enabled: false
+  - bundle_id: "com.apple.Music"
+    enabled: false
+  - bundle_id: "com.apple.Notes"
+    enabled: false
+  - bundle_id: "com.apple.Passwords"
+    enabled: false
+  - bundle_id: "com.apple.Photos"
+    enabled: false
+  - bundle_id: "com.mitchellh.ghostty"
+    enabled: true
+    show_in_notification_center: true
+    show_in_lock_screen: true
+    alert_type: 1 # Banner
+    badges_enabled: true
+    sounds_enabled: true
+  - bundle_id: "com.apple.mail"
+    badges_enabled: true
+    sounds_enabled: false
+  - bundle_id: "com.apple.MobileSMS" # Messages
+    badges_enabled: true
+    sounds_enabled: true
+    critical_alert_enabled: true

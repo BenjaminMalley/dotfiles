@@ -126,3 +126,31 @@
       ansible.builtin.pause:
         prompt: "A configuration profile has been opened for installation. Please go to System Settings > Privacy & Security > Profiles to complete the installation, then press Enter to continue."
       when: profile_trigger is changed # noqa: no-handler
+
+- name: Manage Notification Settings via Configuration Profile
+  when: manage_notification_settings | default(false) | bool
+  block:
+    - name: Generate Notification Settings mobileconfig
+      ansible.builtin.template:
+        src: templates/notification_settings.mobileconfig.j2
+        dest: /tmp/notification_settings.mobileconfig
+        mode: "0644"
+
+    - name: Check if notification profile is already installed
+      ansible.builtin.shell: |
+        set -o pipefail
+        profiles list | grep -q "com.dotfiles.config.notifications"
+      register: notification_profile_check
+      failed_when: false
+      changed_when: false
+
+    - name: Trigger manual installation of Notification Settings mobileconfig
+      ansible.builtin.command: open /tmp/notification_settings.mobileconfig
+      when: notification_profile_check.rc != 0
+      register: notification_profile_trigger
+      changed_when: true
+
+    - name: Inform user to complete notification profile installation
+      ansible.builtin.pause:
+        prompt: "A notification configuration profile has been opened for installation. Please go to System Settings > Privacy & Security > Profiles to complete the installation, then press Enter to continue."
+      when: notification_profile_trigger is changed # noqa: no-handler
