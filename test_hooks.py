@@ -42,15 +42,32 @@ class TestHooks(unittest.TestCase):
         # Line number should be calculated as 4
         mock_run_script.assert_any_call('v', 'test.txt', '4')
 
+    @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
-    def test_gemini_hook_notify(self, mock_notify):
+    def test_gemini_hook_notify(self, mock_notify, mock_run_script):
         payload = {
             "hook_event_name": "Notification",
             "notification_type": "InputRequired",
             "cwd": "/path/to/project"
         }
         handle_gemini_payload(json.dumps(payload))
-        mock_notify.assert_called_with('InputRequired', 'Gemini (project)')
+        # Notification should NOT be called for Gemini anymore
+        mock_notify.assert_not_called()
+        # But editor should be refreshed
+        mock_run_script.assert_called_with('v')
+
+    @patch('lib.hooks.run_local_script')
+    @patch('lib.hooks.send_notification')
+    def test_gemini_hook_after_agent(self, mock_notify, mock_run_script):
+        payload = {
+            "hook_event_name": "AfterAgent",
+            "cwd": "/path/to/project"
+        }
+        handle_gemini_payload(json.dumps(payload))
+        # Notification should NOT be called for Gemini anymore
+        mock_notify.assert_not_called()
+        # But editor should be refreshed
+        mock_run_script.assert_called_with('v')
 
     @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
