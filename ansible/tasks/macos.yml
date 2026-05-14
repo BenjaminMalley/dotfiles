@@ -7,6 +7,7 @@
   changed_when: false
 
 - name: Open iCloud Settings and prompt user
+  when: icloud_check.stdout == "NOT_SIGNED_IN"
   block:
     - name: Trigger iCloud settings pane
       ansible.builtin.command: open "x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings?iCloud"
@@ -15,7 +16,6 @@
     - name: Inform user to sign in
       ansible.builtin.pause:
         prompt: "You are not signed into iCloud. The iCloud settings pane has been opened; please sign in to enable sync features, then press Enter to continue."
-  when: icloud_check.stdout == "NOT_SIGNED_IN"
 
 - name: Set macOS preferences
   community.general.osx_defaults:
