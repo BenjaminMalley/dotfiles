@@ -62,3 +62,6 @@ managed_login_items:
   - { type: "TeamIdentifier", value: "MXGJJ98X76", comment: "Steam", disposition: "Disallowed" }
 
 manage_login_items: false
+install_packages: true
+configure_system_audio: true
+configure_night_shift: true

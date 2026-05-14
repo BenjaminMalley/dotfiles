@@ -3,6 +3,7 @@
     update_homebrew: true
   register: brew_update
   failed_when: brew_update is failed and 'Could not update' not in brew_update.msg
+  when: install_packages | default(true) | bool
 
 - name: Install Homebrew formulae
   community.general.homebrew:
@@ -10,6 +11,7 @@
     state: present
     upgrade: true
   loop: "{{ homebrew_formulae }}"
+  when: install_packages | default(true) | bool
 
 - name: Install Homebrew casks
   community.general.homebrew_cask:
@@ -17,6 +19,7 @@
     state: present
     upgrade: true
   loop: "{{ homebrew_casks }}"
+  when: install_packages | default(true) | bool
 
 - name: Install optional Homebrew formulae
   community.general.homebrew:
@@ -24,7 +27,7 @@
     state: present
     upgrade: true
   loop: "{{ optional_homebrew_formulae }}"
-  when: install_optional | default(false) | bool
+  when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
 
 - name: Install optional Homebrew casks
   community.general.homebrew_cask:
@@ -32,9 +35,10 @@
     state: present
     upgrade: true
   loop: "{{ optional_homebrew_casks }}"
-  when: install_optional | default(false) | bool
+  when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
 
 - name: Remove unused Homebrew dependencies (autoremove)
   ansible.builtin.command: brew autoremove
   register: brew_autoremove
   changed_when: brew_autoremove.stdout != ""
+  when: install_packages | default(true) | bool

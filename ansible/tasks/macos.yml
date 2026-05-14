@@ -61,6 +61,7 @@
       client.setMode(1);
       client.setStrengthCommit(0.5, true);'
   changed_when: false
+  when: configure_night_shift | default(false) | bool
 
 - name: Set Terminal profile settings
   ansible.builtin.shell: |
@@ -77,6 +78,7 @@
 - name: Set alert volume to 0
   ansible.builtin.command: osascript -e 'set volume alert volume 0'
   changed_when: false
+  when: configure_system_audio | default(false) | bool
 
 - name: Manage Background Items (Login Items) via Configuration Profile
   when: manage_login_items | default(false) | bool and managed_login_items is defined and managed_login_items | length > 0
