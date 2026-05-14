@@ -1,3 +1,22 @@
+- name: Check iCloud sign-in status
+  ansible.builtin.shell: |
+    if ! defaults read MobileMeAccounts Accounts >/dev/null 2>&1; then
+      echo "NOT_SIGNED_IN"
+    fi
+  register: icloud_check
+  changed_when: false
+
+- name: Open iCloud Settings and prompt user
+  block:
+    - name: Trigger iCloud settings pane
+      ansible.builtin.command: open "x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings?iCloud"
+      changed_when: true
+
+    - name: Inform user to sign in
+      ansible.builtin.pause:
+        prompt: "You are not signed into iCloud. The iCloud settings pane has been opened; please sign in to enable sync features, then press Enter to continue."
+  when: icloud_check.stdout == "NOT_SIGNED_IN"
+
 - name: Set macOS preferences
   community.general.osx_defaults:
     domain: "{{ item.domain }}"
