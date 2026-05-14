@@ -20,23 +20,16 @@ def handle_gemini_payload(payload_str):
     """Processes the Gemini hook payload."""
     if not payload_str:
         return "{}"
-    
+
     try:
         data = json.loads(payload_str)
-        ntype = data.get('notification_type', '')
         event = data.get('hook_event_name', '')
-        cwd = data.get('cwd', '')
-        
-        project_name = os.path.basename(cwd) if cwd else 'Gemini'
-        should_notify = False
-        msg = ntype if ntype else 'Agent Finished'
-        
-        if event == 'Notification' and ntype in ['ToolPermission', 'InputRequired', 'IdleAlert']:
-            should_notify = True
-        elif event == 'AfterAgent':
-            should_notify = True
 
-        # Check for file modification tools to trigger editor refresh
+        # Refresh editor on completion or when attention is needed
+        if event in ['AfterAgent', 'Notification']:
+            run_local_script('v')
+
+        # Check for file modification tools to trigger editor refresh/jump
         if event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
             tool_input = data.get('tool_input', {})
             file_path = tool_input.get('file_path')
@@ -49,18 +42,15 @@ def handle_gemini_payload(payload_str):
                         line_num = str(int(match.group(1)) + 3)
                 except Exception:
                     pass
-                
+
                 if line_num:
                     run_local_script('v', file_path, line_num)
                 else:
                     run_local_script('v', file_path)
 
-        if should_notify:
-            send_notification(msg, f"Gemini ({project_name})")
-
     except Exception as e:
         sys.stderr.write(f"Error processing Gemini payload: {e}\n")
-    
+
     return "{}"
 
 def calculate_claude_line_number(data):
