@@ -61,4 +61,4 @@ terminal_settings:
 managed_login_items:
   - { type: "TeamIdentifier", value: "MXGJJ98X76", comment: "Steam", disposition: "Disallowed" }
 
-manage_login_items: true
+manage_login_items: false
