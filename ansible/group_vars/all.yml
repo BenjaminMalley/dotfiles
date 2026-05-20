@@ -26,7 +26,6 @@ homebrew_formulae:
   - container
   - fd
   - fzf
-  - gemini-cli
   - jdtls
   - neovim
   - ripgrep
