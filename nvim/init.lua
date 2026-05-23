@@ -155,6 +155,9 @@ require("lazy").setup({
 
   -- Java Support (Specialized)
   { "mfussenegger/nvim-jdtls" },
+
+  -- Interactive evaluation for Lisps and more
+  { "Olical/conjure" },
 }, {
   ui = { border = "rounded" },
 })
