@@ -63,3 +63,5 @@ yarn-error.log*
 # OS generated files
 ehthumbs.db
 Thumbs.db
+
+**/.claude/settings.local.json
