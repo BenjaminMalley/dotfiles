@@ -2,12 +2,11 @@
 import sys
 import os
 
-# Add repo root to sys.path to allow importing lib
 repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, repo_root)
 
-from lib.hooks import handle_claude_notification
+from lib.hooks import handle_claude_edit
 
 if __name__ == "__main__":
     payload = sys.stdin.read()
-    print(handle_claude_notification(payload))
+    print(handle_claude_edit(payload))

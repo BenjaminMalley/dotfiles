@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/claude-hook-edit"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "permission_prompt|idle_prompt|elicitation_dialog",
@@ -16,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/claude-hook-notify"
+            "command": "~/.claude/scripts/claude-hook-stop"
           }
         ]
       }
