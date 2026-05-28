@@ -7,7 +7,7 @@ from lib.utils import run_command
 
 class WtsManager:
     """Manages git worktrees and tmux sessions."""
-    
+
     def __init__(self, name=None, no_worktree=False, attach=False):
         self.name = name
         self.no_worktree = no_worktree
@@ -20,7 +20,7 @@ class WtsManager:
         self.full_branch_name = None
         self.session_name = None
         self.target_dir = Path.cwd()
-        
+
         self._detect_git()
         self._setup_names()
 
@@ -77,6 +77,7 @@ class WtsManager:
 
         if self.in_git and not self.no_worktree:
             self.target_dir = Path.home() / "worktrees" / self.repo_name / self.branch_name
+            run_command(['git', '-C', self.repo_root, 'rst'], check=False)
             self._ensure_worktree()
 
         self._ensure_tmux_session()
@@ -96,7 +97,7 @@ class WtsManager:
             return
 
         self.target_dir.parent.mkdir(parents=True, exist_ok=True)
-        
+
         target_branch = self.full_branch_name
         # Check if the fully prefixed branch exists
         if subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{self.full_branch_name}']).returncode != 0:
@@ -127,18 +128,18 @@ class WtsManager:
 
         print(f"Creating new tmux session '{self.session_name}'...")
         run_command(['tmux', 'new-session', '-d', '-s', self.session_name, '-c', str(self.target_dir)])
-        
+
         # Initial layout
         run_command(['tmux', 'rename-window', '-t', f'{self.session_name}:0', 'Agent'])
         run_command(['tmux', 'select-pane', '-t', f'{self.session_name}:0.0', '-T', 'Agent'])
         run_command(['tmux', 'split-window', '-h', '-t', f'{self.session_name}:0', '-c', str(self.target_dir)])
         run_command(['tmux', 'select-pane', '-t', f'{self.session_name}:0.1', '-T', 'Editor'])
         run_command(['tmux', 'send-keys', '-t', f'{self.session_name}:0.1', 'nvim .', 'Enter'])
-        
+
         agent_cmd = os.environ.get('WTS_AGENT_CMD')
         if agent_cmd:
             run_command(['tmux', 'send-keys', '-t', f'{self.session_name}:0.0', agent_cmd, 'Enter'])
-        
+
         run_command(['tmux', 'select-pane', '-t', f'{self.session_name}:0.0'])
 
     def _switch(self):
@@ -176,11 +177,11 @@ class WtsManager:
                 if status and status.stdout.strip():
                     print("Error: Uncommitted changes present. Please commit or stash first.", file=sys.stderr)
                     sys.exit(1)
-                
+
                 # Get paths
                 res = run_command(['git', 'rev-parse', '--show-toplevel'], capture_output=True)
                 worktree_path = Path(res.stdout.strip()) if res else None
-                
+
                 res = run_command(['git', 'rev-parse', '--git-common-dir'], capture_output=True)
                 if res:
                     common_dir = os.path.abspath(res.stdout.strip())
