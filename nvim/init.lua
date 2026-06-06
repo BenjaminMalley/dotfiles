@@ -174,4 +174,6 @@ require("lazy").setup({
   { "Olical/conjure" },
 }, {
   ui = { border = "rounded" },
+  checker = { enabled = false },
+  change_detection = { enabled = false },
 })
