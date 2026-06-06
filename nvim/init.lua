@@ -176,4 +176,5 @@ require("lazy").setup({
   ui = { border = "rounded" },
   checker = { enabled = false },
   change_detection = { enabled = false },
+  news = { lazy = false },
 })
