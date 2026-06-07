@@ -209,7 +209,7 @@ class WtsManager:
             cleanup_cmd = f"cd / && tmux kill-session -t {quoted_session}"
 
         # Run cleanup on the server
-        run_command(['tmux', 'run-shell', '-b', f"{cleanup_cmd}; tmux refresh-client -S"])
+        run_command(['tmux', 'run-shell', '-b', cleanup_cmd], check=False)
 
 # Compatibility wrappers
 def create_session(args):
