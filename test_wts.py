@@ -197,7 +197,7 @@ class TestWtsIntegration(unittest.TestCase):
         """Tests the -d alias for cleanup."""
         # Start tmux session running the wts command with -d
         cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' -d"
-        
+
         # Start the session
         self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, cmd_str, check=True)
 
@@ -208,9 +208,108 @@ class TestWtsIntegration(unittest.TestCase):
             if ret.returncode != 0:
                 break
             time.sleep(0.5)
-        
+
         self.assertNotEqual(ret.returncode, 0, "Tmux session should have been killed with -d")
         self.assertFalse(os.path.exists(self.worktree_path), "Worktree directory should have been removed with -d")
+
+    def test_wts_add(self):
+        """Tests that wts --add creates a worktree for a second repo with the correct branch prefix."""
+        import json
+
+        # Create a second git repo inside the test dir
+        second_repo = os.path.join(self.test_dir, 'second-repo')
+        os.makedirs(second_repo)
+        subprocess.run(['git', 'init'], cwd=second_repo, check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(['git', 'config', 'user.email', 'test@example.com'], cwd=second_repo, check=True)
+        subprocess.run(['git', 'config', 'user.name', 'Test User'], cwd=second_repo, check=True)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m', 'Initial commit'], cwd=second_repo, check=True, stdout=subprocess.DEVNULL)
+
+        user = 'testuser'
+        short_name = self.session_name  # e.g. "test-wts-session"
+        expected_worktree = os.path.join(self.test_dir, 'worktrees', 'second-repo', short_name)
+        expected_branch = f"{user}/second-repo-{short_name}"
+
+        # Start a live session on the test socket, then run wts --add from inside it
+        self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.test_dir, check=True)
+
+        cmd_str = (
+            f"export HOME='{self.test_dir}'; "
+            f"export USER='{user}'; "
+            f"'{sys.executable}' '{WTS_SCRIPT}' --add '{second_repo}'"
+        )
+        self.run_tmux('send-keys', '-t', self.session_name, cmd_str, 'Enter', check=True)
+
+        # Poll for the worktree to appear
+        max_retries = 20
+        for _ in range(max_retries):
+            if os.path.exists(expected_worktree):
+                break
+            time.sleep(0.5)
+
+        self.assertTrue(os.path.exists(expected_worktree), f"Worktree should exist at {expected_worktree}")
+
+        actual_branch = subprocess.run(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            cwd=expected_worktree, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        self.assertEqual(actual_branch, expected_branch, "Worktree should be on the prefixed branch")
+
+        # Poll for the tmux option to be written
+        option_value = None
+        for _ in range(10):
+            res = self.run_tmux('show-options', '-t', self.session_name, '-v', '@wts-added-repos',
+                                capture_output=True, text=True)
+            if res.returncode == 0 and res.stdout.strip():
+                option_value = res.stdout.strip()
+                break
+            time.sleep(0.3)
+
+        self.assertIsNotNone(option_value, "tmux option @wts-added-repos should be set")
+        entries = json.loads(option_value)
+        self.assertTrue(
+            any(e['worktree'] == expected_worktree for e in entries),
+            "State should record the added worktree path",
+        )
+
+    def test_wts_done_removes_added_repos(self):
+        """Tests that wts --done also removes worktrees recorded in @wts-added-repos."""
+        import json
+
+        # Create a second repo and its worktree manually
+        second_repo = os.path.join(self.test_dir, 'second-repo')
+        os.makedirs(second_repo)
+        subprocess.run(['git', 'init'], cwd=second_repo, check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(['git', 'config', 'user.email', 'test@example.com'], cwd=second_repo, check=True)
+        subprocess.run(['git', 'config', 'user.name', 'Test User'], cwd=second_repo, check=True)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m', 'Initial commit'], cwd=second_repo, check=True, stdout=subprocess.DEVNULL)
+
+        added_worktree = os.path.join(self.test_dir, 'worktrees', 'second-repo', self.session_name)
+        os.makedirs(os.path.dirname(added_worktree), exist_ok=True)
+        subprocess.run(
+            ['git', 'worktree', 'add', added_worktree, '-b', f'branch-{self.session_name}'],
+            cwd=second_repo, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+
+        # Start a session and pre-seed the tmux option with the added worktree
+        self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, check=True)
+        state = json.dumps([{"repo_root": second_repo, "worktree": added_worktree}])
+        self.run_tmux('set-option', '-t', self.session_name, '@wts-added-repos', state, check=True)
+
+        # Run --done from inside the session
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
+        self.run_tmux('send-keys', '-t', self.session_name, cmd_str, 'Enter', check=True)
+
+        # Wait for the session to die
+        max_retries = 20
+        for _ in range(max_retries):
+            ret = self.run_tmux('has-session', '-t', self.session_name, stderr=subprocess.DEVNULL)
+            if ret.returncode != 0:
+                break
+            time.sleep(0.5)
+
+        self.assertNotEqual(ret.returncode, 0, "Session should have been killed")
+        self.assertFalse(os.path.exists(self.worktree_path), "Primary worktree should be removed")
+        self.assertFalse(os.path.exists(added_worktree), "Added cross-repo worktree should be removed")
 
     def test_wts_create_no_worktree(self):
         """Tests creation of session without worktree (inside repo)."""
