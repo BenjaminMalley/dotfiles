@@ -7,7 +7,7 @@ import argparse
 repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, repo_root)
 
-from lib.wts import cleanup_session, create_session
+from lib.wts import add_repo, cleanup_session, create_session
 
 def main():
     parser = argparse.ArgumentParser(description="Manage git worktrees and tmux sessions.")
@@ -15,12 +15,15 @@ def main():
     parser.add_argument("--done", "-d", action="store_true", help="Clean up current session")
     parser.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
     parser.add_argument("--attach", "-a", action="store_true", help="Attach to session if it exists")
-    
+    parser.add_argument("--add", metavar="PATH", help="Add a worktree for another repo to the current session")
+
     args = parser.parse_args()
 
     try:
         if args.done:
             cleanup_session()
+        elif args.add:
+            add_repo(args)
         elif not args.name and not args.no_worktree and not args.attach:
             parser.print_help()
             sys.exit(1)

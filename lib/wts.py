@@ -1,9 +1,10 @@
 import subprocess
 import os
 import sys
-import shlex
+import json
 from pathlib import Path
 from lib.utils import run_command
+
 
 class WtsManager:
     """Manages git worktrees and tmux sessions."""
@@ -65,9 +66,7 @@ class WtsManager:
         else:
             self.session_name = self.branch_name
 
-        self.full_branch_name = self.branch_name
-        if self.user and not self.branch_name.startswith(f"{self.user}/"):
-            self.full_branch_name = f"{self.user}/{self.repo_name}-{self.branch_name}"
+        self.full_branch_name = self._prefixed_branch(self.user, self.repo_name, self.branch_name)
 
     def create_session(self):
         """Creates or attaches to a session."""
@@ -150,6 +149,132 @@ class WtsManager:
         else:
             os.execvp('tmux', ['tmux', 'attach-session', '-t', self.session_name])
 
+    # ------------------------------------------------------------------
+    # Helpers shared between create and --add flows
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _prefixed_branch(user, repo_name, short_name):
+        """Returns the fully-prefixed branch name for a given repo and short name."""
+        if user and not short_name.startswith(f"{user}/"):
+            return f"{user}/{repo_name}-{short_name}"
+        return short_name
+
+    @staticmethod
+    def _create_worktree(repo_root, worktree_path, full_branch, short_branch):
+        """Creates a worktree for repo_root at worktree_path, non-interactively.
+
+        Prefers full_branch (prefixed), falls back to short_branch for backward
+        compatibility, and creates full_branch from HEAD if neither exists.
+        """
+        if worktree_path.exists():
+            return
+
+        worktree_path.parent.mkdir(parents=True, exist_ok=True)
+
+        def _branch_exists(branch):
+            res = run_command(
+                ['git', '-C', str(repo_root), 'show-ref', '--verify', '--quiet',
+                 f'refs/heads/{branch}'],
+                check=False,
+            )
+            return res is not None and res.returncode == 0
+
+        if _branch_exists(full_branch):
+            target = full_branch
+        elif _branch_exists(short_branch):
+            target = short_branch
+        else:
+            run_command(['git', '-C', str(repo_root), 'branch', full_branch])
+            target = full_branch
+
+        print(f"Creating worktree for branch '{target}' at {worktree_path}...")
+        run_command(['git', '-C', str(repo_root), 'worktree', 'add', str(worktree_path), target])
+
+    # ------------------------------------------------------------------
+    # tmux option helpers for tracking cross-repo worktrees
+    # ------------------------------------------------------------------
+
+    _TMUX_OPTION = '@wts-added-repos'
+
+    @staticmethod
+    def _get_added_repos(session_name):
+        """Returns the list of added-repo entries for session_name from the tmux option."""
+        res = subprocess.run(
+            ['tmux', 'show-options', '-t', session_name, '-v', WtsManager._TMUX_OPTION],
+            capture_output=True, text=True,
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            return []
+        try:
+            return json.loads(res.stdout.strip())
+        except Exception:
+            return []
+
+    @staticmethod
+    def _set_added_repos(session_name, entries):
+        """Persists entries as a tmux option on session_name."""
+        subprocess.run(
+            ['tmux', 'set-option', '-t', session_name, WtsManager._TMUX_OPTION, json.dumps(entries)],
+            check=False,
+        )
+
+    @staticmethod
+    def _record_added_worktree(session_name, repo_root, worktree_path):
+        """Appends a cross-repo worktree entry to the session's tmux option (de-duplicated)."""
+        entries = WtsManager._get_added_repos(session_name)
+        entry = {"repo_root": str(repo_root), "worktree": str(worktree_path)}
+        if entry not in entries:
+            entries.append(entry)
+        WtsManager._set_added_repos(session_name, entries)
+
+    # ------------------------------------------------------------------
+    # --add command
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def add_session_repo(repo_path_arg):
+        """Adds a worktree for another repo to the current tmux session."""
+        if 'TMUX' not in os.environ:
+            print("Error: Must be run inside a tmux session.", file=sys.stderr)
+            sys.exit(1)
+
+        res = run_command(['tmux', 'display-message', '-p', '#S'], capture_output=True)
+        short_name = res.stdout.strip() if res else None
+        if not short_name:
+            print("Error: Could not determine current tmux session name.", file=sys.stderr)
+            sys.exit(1)
+
+        repo_path = Path(repo_path_arg).expanduser().resolve()
+        res = run_command(
+            ['git', '-C', str(repo_path), 'rev-parse', '--git-common-dir'],
+            capture_output=True, check=False,
+        )
+        if not res or res.returncode != 0:
+            print(f"Error: '{repo_path}' is not a git repository.", file=sys.stderr)
+            sys.exit(1)
+
+        common_dir = res.stdout.strip()
+        if not os.path.isabs(common_dir):
+            common_dir = os.path.join(str(repo_path), common_dir)
+        common_dir = os.path.abspath(common_dir)
+        repo_root = Path(os.path.dirname(common_dir) if common_dir.endswith('/.git') else common_dir)
+        repo_name = repo_root.name
+
+        user = os.environ.get('USER', '').lower()
+        full_branch = WtsManager._prefixed_branch(user, repo_name, short_name)
+        worktree = Path.home() / "worktrees" / repo_name / short_name
+
+        run_command(['git', '-C', str(repo_root), 'rst'], check=False)
+        WtsManager._create_worktree(repo_root, worktree, full_branch, short_name)
+        WtsManager._record_added_worktree(short_name, repo_root, worktree)
+
+        print(worktree)
+
+    # ------------------------------------------------------------------
+    # --done command
+    # ------------------------------------------------------------------
+
     @staticmethod
     def cleanup_session():
         """Cleans up the current worktree and tmux session."""
@@ -157,7 +282,6 @@ class WtsManager:
             print("Error: Must be run inside a tmux session.", file=sys.stderr)
             sys.exit(1)
 
-        # Get current session name
         res = run_command(['tmux', 'display-message', '-p', '#S'], capture_output=True)
         session_name = res.stdout.strip() if res else None
         if not session_name:
@@ -189,7 +313,10 @@ class WtsManager:
         except Exception:
             pass
 
-        # Switch to another session before killing this one so the client lands somewhere predictable
+        # Read cross-repo entries before switching away (tmux option stays readable until kill)
+        added = WtsManager._get_added_repos(session_name)
+
+        # Switch to another session before killing this one
         other = subprocess.run(
             ['tmux', 'display-message', '-p', '#{session_id}'],
             capture_output=True, text=True,
@@ -210,7 +337,14 @@ class WtsManager:
         if should_remove_worktree:
             run_command(['git', '-C', main_repo, 'worktree', 'remove', '--force', str(worktree_path)], check=False)
 
+        for entry in added:
+            run_command(
+                ['git', '-C', entry['repo_root'], 'worktree', 'remove', '--force', entry['worktree']],
+                check=False,
+            )
+
         subprocess.run(['tmux', 'kill-session', '-t', session_name])
+
 
 # Compatibility wrappers
 def create_session(args):
@@ -219,3 +353,6 @@ def create_session(args):
 
 def cleanup_session():
     WtsManager.cleanup_session()
+
+def add_repo(args):
+    WtsManager.add_session_repo(args.add)
