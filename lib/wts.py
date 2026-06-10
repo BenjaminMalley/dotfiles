@@ -172,13 +172,6 @@ class WtsManager:
         try:
             res = run_command(['git', 'rev-parse', '--is-inside-work-tree'], capture_output=True, check=False)
             if res and res.returncode == 0:
-                # Check for uncommitted changes
-                status = run_command(['git', 'status', '--porcelain'], capture_output=True)
-                if status and status.stdout.strip():
-                    print("Error: Uncommitted changes present. Please commit or stash first.", file=sys.stderr)
-                    sys.exit(1)
-
-                # Get paths
                 res = run_command(['git', 'rev-parse', '--show-toplevel'], capture_output=True)
                 worktree_path = Path(res.stdout.strip()) if res else None
 
@@ -187,7 +180,6 @@ class WtsManager:
                     common_dir = os.path.abspath(res.stdout.strip())
                     main_repo = os.path.dirname(common_dir) if common_dir.endswith('/.git') else common_dir
 
-                # Determine if we should remove the worktree (only if in ~/worktrees)
                 if worktree_path:
                     try:
                         worktree_path.relative_to(Path.home() / "worktrees")
@@ -197,19 +189,28 @@ class WtsManager:
         except Exception:
             pass
 
-        # Construct cleanup command
-        quoted_session = shlex.quote(session_name)
-        if should_remove_worktree:
-            quoted_path = shlex.quote(str(worktree_path))
-            quoted_main_repo = shlex.quote(main_repo)
-            print(f"Cleaning up session '{session_name}' and worktree '{worktree_path}'...")
-            cleanup_cmd = f"cd / && git -C {quoted_main_repo} worktree remove --force {quoted_path}; tmux kill-session -t {quoted_session}"
+        # Switch to another session before killing this one so the client lands somewhere predictable
+        other = subprocess.run(
+            ['tmux', 'display-message', '-p', '#{session_id}'],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        sessions = subprocess.run(
+            ['tmux', 'list-sessions', '-F', '#{session_id} #{session_name}'],
+            capture_output=True, text=True,
+        ).stdout.strip().splitlines()
+        next_session = next(
+            (parts[1] for line in sessions if (parts := line.split(None, 1)) and parts[0] != other),
+            None,
+        )
+        if next_session:
+            subprocess.run(['tmux', 'switch-client', '-t', next_session])
         else:
-            print(f"Cleaning up session '{session_name}'...")
-            cleanup_cmd = f"cd / && tmux kill-session -t {quoted_session}"
+            subprocess.run(['tmux', 'detach-client'])
 
-        # Run cleanup on the server
-        run_command(['tmux', 'run-shell', '-b', cleanup_cmd], check=False)
+        if should_remove_worktree:
+            run_command(['git', '-C', main_repo, 'worktree', 'remove', '--force', str(worktree_path)], check=False)
+
+        subprocess.run(['tmux', 'kill-session', '-t', session_name])
 
 # Compatibility wrappers
 def create_session(args):
