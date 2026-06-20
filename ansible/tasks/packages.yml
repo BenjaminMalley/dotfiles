@@ -2,23 +2,32 @@
   community.general.homebrew:
     update_homebrew: true
   register: brew_update
-  failed_when: brew_update is failed and 'Could not update' not in brew_update.msg
+  failed_when: brew_update is failed and 'Could not update' not in brew_update.msg and 'Fetching' not in brew_update.msg
   when: install_packages | default(true) | bool
 
 - name: Install Homebrew formulae
   community.general.homebrew:
     name: "{{ item }}"
     state: present
-    upgrade: true
   loop: "{{ homebrew_formulae }}"
+  environment:
+    HOMEBREW_NO_AUTO_UPDATE: "1"
+  when: install_packages | default(true) | bool
+
+- name: Upgrade Homebrew formulae
+  ansible.builtin.command: brew upgrade --formula {{ homebrew_formulae | join(' ') }}
+  register: brew_upgrade_formulae
+  changed_when: "'Already up-to-date' not in brew_upgrade_formulae.stdout"
+  failed_when: false
   when: install_packages | default(true) | bool
 
 - name: Install Homebrew casks
   community.general.homebrew_cask:
     name: "{{ item }}"
     state: present
-    upgrade: true
   loop: "{{ homebrew_casks }}"
+  environment:
+    HOMEBREW_NO_AUTO_UPDATE: "1"
   when: install_packages | default(true) | bool
 
 - name: Install optional Homebrew formulae
@@ -27,14 +36,17 @@
     state: present
     upgrade: true
   loop: "{{ optional_homebrew_formulae }}"
+  environment:
+    HOMEBREW_NO_AUTO_UPDATE: "1"
   when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
 
 - name: Install optional Homebrew casks
   community.general.homebrew_cask:
     name: "{{ item }}"
     state: present
-    upgrade: true
   loop: "{{ optional_homebrew_casks }}"
+  environment:
+    HOMEBREW_NO_AUTO_UPDATE: "1"
   when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
 
 - name: Remove unused Homebrew dependencies (autoremove)
