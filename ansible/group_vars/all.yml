@@ -6,9 +6,7 @@ dotfiles:
   - { source: ".vimrc", dest: ".vimrc" }
   - { source: "nvim", dest: ".config/nvim" }
   - { source: "ghostty/config", dest: ".config/ghostty/config" }
-  - { source: "gemini-settings.json", dest: ".gemini/settings.json" }
   - { source: "claude-settings.json", dest: ".claude/settings.json" }
-  - { source: "AGENT.md", dest: ".gemini/GEMINI.md" }
   - { source: "AGENT.md", dest: ".claude/CLAUDE.md" }
 
 optional_dotfiles:
