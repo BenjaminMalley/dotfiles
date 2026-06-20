@@ -16,7 +16,7 @@ This will symlink the dotfiles, install Homebrew and software (on macOS), and se
 Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`** for fuzzy finding.
 
 ### General
-- **Leader Key**: `` (default)
+- **Leader Key**: `\` (default)
 
 ### Fuzzy Finder (`fzf-lua`)
 - `<C-p>`: Search for files in the project.
