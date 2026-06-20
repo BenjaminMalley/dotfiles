@@ -10,6 +10,15 @@
     - .gemini/policies
     - .claude/agents
 
+- name: Ensure ~/.gitconfig includes gitconfig_base
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_facts['user_dir'] }}/.gitconfig"
+    block: |
+      [include]
+          path = ~/.gitconfig_base
+    create: true
+    mode: "0644"
+
 - name: Symlink standard dotfiles
   ansible.builtin.file:
     src: "{{ playbook_dir }}/../{{ item.source }}"
