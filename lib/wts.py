@@ -1,5 +1,6 @@
 import subprocess
 import os
+import signal
 import sys
 import json
 from pathlib import Path
@@ -377,8 +378,9 @@ class WtsManager:
                 check=False,
             )
 
-        WtsManager._save_resurrect_state()
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
         subprocess.run(['tmux', 'kill-session', '-t', session_name])
+        WtsManager._save_resurrect_state()
 
 
 # Compatibility wrappers
