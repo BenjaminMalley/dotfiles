@@ -34,6 +34,12 @@ endif
 " Allow tmux to dim the background by making Vim background transparent
 " This must come AFTER the colorscheme command
 highlight Normal guibg=NONE ctermbg=NONE
+
+" Vimdiff colors — muted, dark-background-friendly
+highlight DiffAdd    guibg=#1a3a1a ctermbg=22  guifg=NONE ctermfg=NONE
+highlight DiffDelete guibg=#3a1a1a ctermbg=52  guifg=#555555 ctermfg=240
+highlight DiffChange guibg=#1a1a3a ctermbg=17  guifg=NONE ctermfg=NONE
+highlight DiffText   guibg=#3a3a00 ctermbg=58  guifg=NONE ctermfg=NONE gui=bold cterm=bold
 highlight NonText guibg=NONE ctermbg=NONE
 highlight LineNr guibg=NONE ctermbg=NONE
 highlight Folded guibg=NONE ctermbg=NONE
