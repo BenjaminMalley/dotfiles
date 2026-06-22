@@ -10,12 +10,12 @@
     - .gemini/policies
     - .claude/agents
 
-- name: Ensure ~/.gitconfig includes gitconfig_base
+- name: Ensure ~/.gitconfig includes gitconfig.base
   ansible.builtin.blockinfile:
     path: "{{ ansible_facts['user_dir'] }}/.gitconfig"
     block: |
       [include]
-          path = ~/.gitconfig_base
+          path = ~/.gitconfig.base
     create: true
     mode: "0644"
 

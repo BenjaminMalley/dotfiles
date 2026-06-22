@@ -1,5 +1,5 @@
 dotfiles:
-  - { source: "gitconfig_base", dest: ".gitconfig_base" }
+  - { source: "gitconfig.base", dest: ".gitconfig.base" }
   - { source: "gitignore_global", dest: ".gitignore_global" }
   - { source: ".zshrc", dest: ".zshrc" }
   - { source: ".tmux.conf", dest: ".tmux.conf" }
