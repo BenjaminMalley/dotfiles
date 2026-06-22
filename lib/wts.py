@@ -79,7 +79,9 @@ class WtsManager:
             run_command(['git', '-C', self.repo_root, 'rst'], check=False)
             self._ensure_worktree()
 
-        self._ensure_tmux_session()
+        created = self._ensure_tmux_session()
+        if created:
+            self._save_resurrect_state()
         self._switch()
 
     def _attach(self):
@@ -120,10 +122,10 @@ class WtsManager:
         run_command(['git', 'worktree', 'add', str(self.target_dir), target_branch])
 
     def _ensure_tmux_session(self):
-        """Ensures the tmux session exists with the desired layout."""
+        """Ensures the tmux session exists. Returns True if a new session was created."""
         res = subprocess.run(['tmux', 'has-session', '-t', f'={self.session_name}'], capture_output=True)
         if res.returncode == 0:
-            return
+            return False
 
         print(f"Creating new tmux session '{self.session_name}'...")
         run_command(['tmux', 'new-session', '-d', '-s', self.session_name, '-c', str(self.target_dir)])
@@ -140,6 +142,7 @@ class WtsManager:
             run_command(['tmux', 'send-keys', '-t', f'{self.session_name}:0.0', agent_cmd, 'Enter'])
 
         run_command(['tmux', 'select-pane', '-t', f'{self.session_name}:0.0'])
+        return True
 
     def _switch(self):
         """Switches the current client to the session."""
@@ -190,6 +193,37 @@ class WtsManager:
 
         print(f"Creating worktree for branch '{target}' at {worktree_path}...")
         run_command(['git', '-C', str(repo_root), 'worktree', 'add', str(worktree_path), target])
+
+    # ------------------------------------------------------------------
+    # tmux-resurrect integration
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _resurrect_save_script():
+        """Returns the path to the resurrect save.sh if installed, else None."""
+        # Try the tmux option the plugin sets at load time
+        res = subprocess.run(
+            ['tmux', 'show-options', '-gv', '@resurrect-save-script-path'],
+            capture_output=True, text=True,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            path = Path(res.stdout.strip())
+            if path.exists():
+                return path
+        # Fallback to the default TPM install location
+        fallback = Path.home() / '.tmux' / 'plugins' / 'tmux-resurrect' / 'scripts' / 'save.sh'
+        return fallback if fallback.exists() else None
+
+    @staticmethod
+    def _save_resurrect_state():
+        """Triggers a tmux-resurrect save; silently skips if not installed."""
+        script = WtsManager._resurrect_save_script()
+        if not script:
+            return
+        subprocess.run(
+            [str(script)],
+            check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
 
     # ------------------------------------------------------------------
     # tmux option helpers for tracking cross-repo worktrees
@@ -343,6 +377,7 @@ class WtsManager:
                 check=False,
             )
 
+        WtsManager._save_resurrect_state()
         subprocess.run(['tmux', 'kill-session', '-t', session_name])
 
 
