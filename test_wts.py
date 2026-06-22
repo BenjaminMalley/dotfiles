@@ -43,12 +43,12 @@ class TestWtsIntegration(unittest.TestCase):
         # Parent dir must exist
         os.makedirs(os.path.dirname(self.worktree_path), exist_ok=True)
         subprocess.run(['git', 'worktree', 'add', self.worktree_path, '-b', 'feature-branch'], cwd=self.test_dir, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
+
         self.session_name = "test-wts-session"
-        
+
         # Ensure clean state for tmux server on this socket
         self.run_tmux('kill-server', stderr=subprocess.DEVNULL)
-        
+
         # Start a dummy session to keep the server alive when the test session is killed
         # This mimics real usage where other sessions usually exist.
         # If the server dies (last session killed), the run-shell background job might be terminated.
@@ -57,7 +57,7 @@ class TestWtsIntegration(unittest.TestCase):
     def tearDown(self):
         # Clean up tmux server
         self.run_tmux('kill-server', stderr=subprocess.DEVNULL)
-        
+
         # Clean up temp dir
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir)
@@ -68,7 +68,7 @@ class TestWtsIntegration(unittest.TestCase):
         user = "testuser"
         repo_name = os.path.basename(self.test_dir)
         expected_full_branch = f"{user}/{repo_name}-{branch_name}"
-        
+
         # Create a fake tmux script
         fake_tmux_dir = os.path.join(self.test_dir, 'bin')
         os.makedirs(fake_tmux_dir, exist_ok=True)
@@ -81,17 +81,17 @@ class TestWtsIntegration(unittest.TestCase):
             f.write('fi\n')
             f.write('exit 0\n')
         os.chmod(fake_tmux, 0o755)
-        
+
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['USER'] = user
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
-        
+
         # Run wts script
         # We need to simulate "yes" input because wts prompts to create the branch
         p = subprocess.Popen(
-            [sys.executable, WTS_SCRIPT, branch_name], 
-            cwd=self.test_dir, 
+            [sys.executable, WTS_SCRIPT, branch_name],
+            cwd=self.test_dir,
             env=env,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -99,7 +99,7 @@ class TestWtsIntegration(unittest.TestCase):
             text=True
         )
         stdout, stderr = p.communicate(input="y\n")
-        
+
         if p.returncode != 0:
             print(f"STDOUT: {stdout}")
             print(f"STDERR: {stderr}")
@@ -108,14 +108,14 @@ class TestWtsIntegration(unittest.TestCase):
         # Verify worktree created at short path
         expected_worktree_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
         self.assertTrue(os.path.exists(expected_worktree_path), f"Worktree should be at {expected_worktree_path}")
-        
+
         # Verify the actual git branch has the prefix
         # We check the branch checked out in the worktree
         actual_branch = subprocess.run(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 
-            cwd=expected_worktree_path, 
-            capture_output=True, 
-            text=True, 
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            cwd=expected_worktree_path,
+            capture_output=True,
+            text=True,
             check=True
         ).stdout.strip()
         self.assertEqual(actual_branch, expected_full_branch, "Branch name should be prefixed")
@@ -130,7 +130,7 @@ class TestWtsIntegration(unittest.TestCase):
         branch_name = "new-feature"
         # Create the branch first
         subprocess.run(['git', 'branch', branch_name], cwd=self.test_dir, check=True)
-        
+
         # Create a fake tmux script to intercept calls
         fake_tmux_dir = os.path.join(self.test_dir, 'bin')
         os.makedirs(fake_tmux_dir)
@@ -143,13 +143,13 @@ class TestWtsIntegration(unittest.TestCase):
             f.write('fi\n')
             f.write('exit 0\n')
         os.chmod(fake_tmux, 0o755)
-        
+
         # Setup environment to use fake home and fake tmux
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
         env['WTS_AGENT_CMD'] = 'test-agent'
-        
+
         # Run wts script
         subprocess.run([sys.executable, WTS_SCRIPT, branch_name], cwd=self.test_dir, env=env, check=True)
 
@@ -158,7 +158,7 @@ class TestWtsIntegration(unittest.TestCase):
         # wts creates worktrees in ~/worktrees/<repo>/<branch>
         expected_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
         self.assertTrue(os.path.exists(expected_path), f"Worktree should be created at {expected_path}")
-        
+
         # Verify tmux execution was attempted
         self.assertTrue(os.path.exists(tmux_log), "tmux should have been called")
         with open(tmux_log, 'r') as f:
@@ -175,7 +175,7 @@ class TestWtsIntegration(unittest.TestCase):
         # This avoids shell startup scripts (like airchat) interfering
         # We must set HOME so wts knows where ~/worktrees is (checking against our temp dir)
         cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
-        
+
         # Start the session. It runs the command and stays open until command finishes (or is killed)
         self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, cmd_str, check=True)
 
@@ -187,7 +187,7 @@ class TestWtsIntegration(unittest.TestCase):
             if ret.returncode != 0:
                 break
             time.sleep(0.5)
-        
+
         self.assertNotEqual(ret.returncode, 0, "Tmux session should have been killed")
 
         # Check if worktree is gone
@@ -314,7 +314,7 @@ class TestWtsIntegration(unittest.TestCase):
     def test_wts_create_no_worktree(self):
         """Tests creation of session without worktree (inside repo)."""
         branch_name = "fix-bug"
-        
+
         # Create a fake tmux script
         fake_tmux_dir = os.path.join(self.test_dir, 'bin')
         os.makedirs(fake_tmux_dir, exist_ok=True)
@@ -327,21 +327,21 @@ class TestWtsIntegration(unittest.TestCase):
             f.write('fi\n')
             f.write('exit 0\n')
         os.chmod(fake_tmux, 0o755)
-        
+
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
-        
+
         # Run wts with --no-worktree
         # Note: Depending on implementation, flag might need to be before or after name
         # We will assume argparse handles both, but let's put it after for now or check usage
         subprocess.run([sys.executable, WTS_SCRIPT, branch_name, '--no-worktree'], cwd=self.test_dir, env=env, check=True)
-        
+
         # Verify NO worktree was created
         repo_name = os.path.basename(self.test_dir)
         unexpected_path = os.path.join(self.test_dir, 'worktrees', repo_name, branch_name)
         self.assertFalse(os.path.exists(unexpected_path), "Worktree should NOT be created")
-        
+
         # Verify tmux called with correct session name and CWD (should be repo root)
         with open(tmux_log, 'r') as f:
             content = f.read()
@@ -354,7 +354,7 @@ class TestWtsIntegration(unittest.TestCase):
         # Create a temp dir outside of the current git repo
         with tempfile.TemporaryDirectory() as temp_dir:
             session_name = "random-session"
-            
+
             # Fake tmux setup
             fake_tmux_dir = os.path.join(temp_dir, 'bin')
             os.makedirs(fake_tmux_dir, exist_ok=True)
@@ -367,14 +367,14 @@ class TestWtsIntegration(unittest.TestCase):
                 f.write('fi\n')
                 f.write('exit 0\n')
             os.chmod(fake_tmux, 0o755)
-            
+
             env = os.environ.copy()
             env['HOME'] = temp_dir
             env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
-            
+
             # Run wts outside repo
             subprocess.run([sys.executable, WTS_SCRIPT, session_name], cwd=temp_dir, env=env, check=True)
-            
+
             # Verify tmux called with simple session name
             with open(tmux_log, 'r') as f:
                 content = f.read()
@@ -395,18 +395,18 @@ class TestWtsIntegration(unittest.TestCase):
             f.write('fi\n')
             f.write('exit 0\n')
         os.chmod(fake_tmux, 0o755)
-        
+
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
-        
+
         # Get repo name for verification
         repo_name = os.path.basename(self.test_dir)
         expected_session_name = repo_name
 
         # Run wts with -n but NO name
         subprocess.run([sys.executable, WTS_SCRIPT, '-n'], cwd=self.test_dir, env=env, check=True)
-        
+
         # Verify tmux called with correct session name (should default to repo name)
         with open(tmux_log, 'r') as f:
             content = f.read()
@@ -427,7 +427,7 @@ class TestWtsIntegration(unittest.TestCase):
             f.write('fi\n')
             f.write('exit 0\n')
         os.chmod(fake_tmux, 0o755)
-        
+
         env = os.environ.copy()
         env['HOME'] = self.test_dir
         env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
@@ -439,7 +439,7 @@ class TestWtsIntegration(unittest.TestCase):
             print(f"STDOUT: {res.stdout}")
             print(f"STDERR: {res.stderr}")
             self.assertEqual(res.returncode, 0, "wts --attach failed")
-        
+
         # Verify tmux called with attach-session and correct name
         current_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], cwd=self.test_dir, capture_output=True, text=True, check=True).stdout.strip()
         expected_session_name = current_branch
@@ -524,19 +524,28 @@ class TestWtsIntegration(unittest.TestCase):
         self.assertFalse(os.path.exists(sentinel), "no resurrect save should be triggered when not installed")
 
     def test_wts_done_saves_resurrect_state(self):
-        """Deleting a session triggers a resurrect save (end-to-end on real tmux socket)."""
-        marker = os.path.join(self.test_dir, 'resurrect_saved.marker')
+        """Deleting a session triggers a resurrect save after the session is gone.
 
-        # Fake save.sh touches a marker so we can observe that it ran.
+        The save.sh captures the live session list at the moment it runs. We then
+        assert:
+          - the killed session is absent  (save happened *after* kill)
+          - the keepalive session is present (the server is still up)
+        This directly falsifies the original order-of-operations bug where the save
+        ran before kill-session, which would have caused the deleted session to appear.
+        """
+        sessions_snapshot = os.path.join(self.test_dir, 'sessions_at_save.txt')
+
         save_dir = os.path.join(self.test_dir, '.tmux', 'plugins', 'tmux-resurrect', 'scripts')
         os.makedirs(save_dir, exist_ok=True)
         save_script = os.path.join(save_dir, 'save.sh')
         with open(save_script, 'w') as f:
-            f.write(f'#!/bin/sh\ntouch "{marker}"\n')
+            # Record which sessions are alive at the moment the save runs.
+            f.write(
+                f'#!/bin/sh\n'
+                f'tmux -L wts_test_socket list-sessions -F "#{{session_name}}" > "{sessions_snapshot}"\n'
+            )
         os.chmod(save_script, 0o755)
 
-        # The isolated tmux server loads ~/.tmux.conf and sets @resurrect-save-script-path to
-        # the real script. Override the global option to point at our fake script instead.
         self.run_tmux('set-option', '-g', '@resurrect-save-script-path', save_script, check=True)
 
         cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
@@ -551,10 +560,56 @@ class TestWtsIntegration(unittest.TestCase):
         self.assertNotEqual(ret.returncode, 0, "Session should have been killed")
 
         for _ in range(10):
-            if os.path.exists(marker):
+            if os.path.exists(sessions_snapshot):
                 break
             time.sleep(0.3)
-        self.assertTrue(os.path.exists(marker), "resurrect save should be triggered on --done")
+        self.assertTrue(os.path.exists(sessions_snapshot), "resurrect save should be triggered on --done")
+
+        with open(sessions_snapshot) as f:
+            saved_sessions = f.read().splitlines()
+        self.assertNotIn(
+            self.session_name, saved_sessions,
+            "deleted session must be absent from the saved state (save must run after kill)",
+        )
+        self.assertIn(
+            'keepalive', saved_sessions,
+            "keepalive session should be present in the saved state",
+        )
+
+    def test_wts_create_no_save_if_session_exists(self):
+        """No resurrect save is triggered when switching to an already-existing session."""
+        branch_name = "existing-session"
+        subprocess.run(['git', 'branch', branch_name], cwd=self.test_dir, check=True)
+
+        sentinel = os.path.join(self.test_dir, 'resurrect_existing.marker')
+        save_script = self._write_fake_resurrect()
+        with open(save_script, 'w') as f:
+            f.write(f'#!/bin/sh\ntouch "{sentinel}"\n')
+        os.chmod(save_script, 0o755)
+
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        with open(fake_tmux, 'w') as f:
+            # has-session returns 0 → session already exists; no new session is created.
+            f.write('#!/bin/sh\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n  exit 0\nfi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+
+        res = subprocess.run(
+            [sys.executable, WTS_SCRIPT, branch_name],
+            cwd=self.test_dir, env=env, capture_output=True, text=True,
+        )
+        self.assertEqual(res.returncode, 0, f"wts should succeed: {res.stderr}")
+        self.assertFalse(
+            os.path.exists(sentinel),
+            "resurrect save must not be triggered when the session already existed",
+        )
 
 if __name__ == '__main__':
     # Verify dependencies
@@ -564,5 +619,5 @@ if __name__ == '__main__':
     if shutil.which('git') is None:
         print("Skipping wts tests: git not found")
         sys.exit(0)
-        
+
     unittest.main()
