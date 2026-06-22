@@ -1,16 +1,16 @@
 dotfiles:
   - { source: "gitconfig.base", dest: ".gitconfig.base" }
   - { source: "gitignore_global", dest: ".gitignore_global" }
-  - { source: ".zshrc", dest: ".zshrc" }
-  - { source: ".tmux.conf", dest: ".tmux.conf" }
-  - { source: ".vimrc", dest: ".vimrc" }
+  - { source: "zshrc", dest: ".zshrc" }
+  - { source: "tmux.conf", dest: ".tmux.conf" }
+  - { source: "vimrc", dest: ".vimrc" }
   - { source: "nvim", dest: ".config/nvim" }
   - { source: "ghostty/config", dest: ".config/ghostty/config" }
   - { source: "claude-settings.json", dest: ".claude/settings.json" }
   - { source: "AGENT.md", dest: ".claude/CLAUDE.md" }
 
 optional_dotfiles:
-  - { source: ".editorconfig", dest: ".editorconfig", description: "global editorconfig file" }
+  - { source: "editorconfig", dest: ".editorconfig", description: "global editorconfig file" }
 
 macos_services_to_restart:
   - Dock
