@@ -290,7 +290,7 @@ class TestWtsIntegration(unittest.TestCase):
             cwd=second_repo, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
 
-        # Start a session and pre-seed the tmux option with the added worktree
+        # Start a session and pre-seed the tmux options
         self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, check=True)
         state = json.dumps([{"repo_root": second_repo, "worktree": added_worktree}])
         self.run_tmux('set-option', '-t', self.session_name, '@wts-added-repos', state, check=True)
@@ -447,6 +447,114 @@ class TestWtsIntegration(unittest.TestCase):
         with open(tmux_log, 'r') as f:
             content = f.read()
             self.assertIn(f"attach-session -t {expected_session_name}", content)
+
+    def _write_fake_resurrect(self):
+        """Creates a fake tmux-resurrect save.sh under the test HOME. Returns its path."""
+        save_dir = os.path.join(self.test_dir, '.tmux', 'plugins', 'tmux-resurrect', 'scripts')
+        os.makedirs(save_dir, exist_ok=True)
+        save_script = os.path.join(save_dir, 'save.sh')
+        with open(save_script, 'w') as f:
+            f.write('#!/bin/sh\nexit 0\n')
+        os.chmod(save_script, 0o755)
+        return save_script
+
+    def test_wts_create_saves_resurrect_state(self):
+        """When resurrect is installed, creating a session triggers a save via run-shell."""
+        branch_name = "save-feature"
+        subprocess.run(['git', 'branch', branch_name], cwd=self.test_dir, check=True)
+
+        save_script = self._write_fake_resurrect()
+
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux_save.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n  exit 1\nfi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+
+        subprocess.run([sys.executable, WTS_SCRIPT, branch_name], cwd=self.test_dir, env=env, check=True)
+
+        with open(tmux_log, 'r') as f:
+            content = f.read()
+        # The save script is invoked directly (not via run-shell), so it won't appear in the tmux log.
+        # Confirm the session was created without error; the save is tested end-to-end in test_wts_done_saves_resurrect_state.
+        # Here we verify the script path is discoverable by placing a sentinel in the script.
+        sentinel = os.path.join(self.test_dir, 'resurrect_create.marker')
+        with open(save_script, 'w') as f:
+            f.write(f'#!/bin/sh\ntouch "{sentinel}"\n')
+        os.chmod(save_script, 0o755)
+        branch_name2 = "save-feature-2"
+        subprocess.run(['git', 'branch', branch_name2], cwd=self.test_dir, check=True)
+        subprocess.run([sys.executable, WTS_SCRIPT, branch_name2], cwd=self.test_dir, env=env, check=True)
+        self.assertTrue(os.path.exists(sentinel), "resurrect save script should be invoked on create")
+
+    def test_wts_create_no_resurrect_is_graceful(self):
+        """When resurrect is not installed, creating a session still succeeds and skips the save."""
+        branch_name = "nosave-feature"
+        subprocess.run(['git', 'branch', branch_name], cwd=self.test_dir, check=True)
+
+        # Note: intentionally NOT creating the fake resurrect save.sh
+
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux_nosave.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n  exit 1\nfi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+
+        res = subprocess.run([sys.executable, WTS_SCRIPT, branch_name], cwd=self.test_dir, env=env,
+                             capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"wts should succeed without resurrect: {res.stderr}")
+
+        sentinel = os.path.join(self.test_dir, 'resurrect_graceful.marker')
+        self.assertFalse(os.path.exists(sentinel), "no resurrect save should be triggered when not installed")
+
+    def test_wts_done_saves_resurrect_state(self):
+        """Deleting a session triggers a resurrect save (end-to-end on real tmux socket)."""
+        marker = os.path.join(self.test_dir, 'resurrect_saved.marker')
+
+        # Fake save.sh touches a marker so we can observe that it ran.
+        save_dir = os.path.join(self.test_dir, '.tmux', 'plugins', 'tmux-resurrect', 'scripts')
+        os.makedirs(save_dir, exist_ok=True)
+        save_script = os.path.join(save_dir, 'save.sh')
+        with open(save_script, 'w') as f:
+            f.write(f'#!/bin/sh\ntouch "{marker}"\n')
+        os.chmod(save_script, 0o755)
+
+        # The isolated tmux server loads ~/.tmux.conf and sets @resurrect-save-script-path to
+        # the real script. Override the global option to point at our fake script instead.
+        self.run_tmux('set-option', '-g', '@resurrect-save-script-path', save_script, check=True)
+
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
+        self.run_tmux('new-session', '-d', '-s', self.session_name, '-c', self.worktree_path, cmd_str, check=True)
+
+        max_retries = 20
+        for _ in range(max_retries):
+            ret = self.run_tmux('has-session', '-t', self.session_name, stderr=subprocess.DEVNULL)
+            if ret.returncode != 0:
+                break
+            time.sleep(0.5)
+        self.assertNotEqual(ret.returncode, 0, "Session should have been killed")
+
+        for _ in range(10):
+            if os.path.exists(marker):
+                break
+            time.sleep(0.3)
+        self.assertTrue(os.path.exists(marker), "resurrect save should be triggered on --done")
 
 if __name__ == '__main__':
     # Verify dependencies
