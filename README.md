@@ -22,9 +22,9 @@ Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`*
 - `<C-p>`: Search for files in the project.
 - `<leader>fg`: Live grep (search text across all files).
 - `<leader>fb`: Switch between open buffers.
-- `<leader>fr`: Browse recently opened files (global).
-- `<leader>fR`: Browse recently opened files (current project only).
+- `<leader>fr`: Browse recently opened files, including ones opened in the current session.
 - `<leader>fh`: Search Neovim help tags.
+- `<leader>gs`: Browse files changed in the current worktree (git status: modified/staged/untracked).
 
 ### LSP (Language Server Protocol)
 - `gd`: Go to definition.

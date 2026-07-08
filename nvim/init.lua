@@ -64,9 +64,9 @@ require("lazy").setup({
       vim.keymap.set("n", "<C-p>", fzf.files, { desc = "Fzf Files" })
       vim.keymap.set("n", "<leader>fg", fzf.live_grep, { desc = "Fzf Live Grep" })
       vim.keymap.set("n", "<leader>fb", fzf.buffers, { desc = "Fzf Buffers" })
-      vim.keymap.set("n", "<leader>fr", fzf.oldfiles, { desc = "[F]ind [R]ecent Files" })
-      vim.keymap.set("n", "<leader>fR", function() fzf.oldfiles({ cwd_only = true }) end, { desc = "[F]ind [R]ecent Files (Current Project)" })
+      vim.keymap.set("n", "<leader>fr", function() fzf.oldfiles({ include_current_session = true }) end, { desc = "[F]ind [R]ecent Files" })
       vim.keymap.set("n", "<leader>fh", fzf.help_tags, { desc = "Fzf Help" })
+      vim.keymap.set("n", "<leader>gs", fzf.git_status, { desc = "[G]it [S]tatus" })
       -- LSP integration via fzf-lua
       vim.keymap.set('n', 'gd', fzf.lsp_definitions, { desc = "Fzf Definition" })
       vim.keymap.set('n', 'gr', fzf.lsp_references, { desc = "Fzf References" })
