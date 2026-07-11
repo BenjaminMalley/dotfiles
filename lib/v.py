@@ -9,12 +9,13 @@ class VRefresher:
     EDITORS = ['nvim', 'vim', 'vi']
     SHELLS = ['bash', 'zsh', 'fish', 'sh']
 
-    def __init__(self, filename=None, line=None, column=None, pattern=None, dry_run=False):
+    def __init__(self, filename=None, line=None, column=None, pattern=None, dry_run=False, navigate=False):
         self.filename = filename
         self.line = line
         self.column = column
         self.pattern = pattern
         self.dry_run = dry_run
+        self.navigate = navigate
 
         self.target_pane_id = None
         self.foreground_cmd = None
@@ -144,7 +145,10 @@ class VRefresher:
         ]
         if self.filename:
             abs_path = os.path.abspath(self.filename)
-            cmds.append(['tmux', 'send-keys', '-t', self.target_pane_id, f':e! {abs_path}', 'Enter'])
+            # :drop reuses an existing buffer/window without discarding unsaved
+            # changes, unlike :e! which force-reloads from disk.
+            open_cmd = ':drop' if self.navigate else ':e!'
+            cmds.append(['tmux', 'send-keys', '-t', self.target_pane_id, f'{open_cmd} {abs_path}', 'Enter'])
             if self.pattern:
                 cmds.append(['tmux', 'send-keys', '-t', self.target_pane_id, f'/{self.pattern}', 'Enter'])
             elif self.line:
@@ -211,8 +215,8 @@ def inspect_panes():
     except Exception as e:
         print(f"Error inspecting panes: {e}")
 
-def refresh_editor(filename=None, line=None, column=None, pattern=None, dry_run=False):
-    return VRefresher(filename, line, column, pattern, dry_run).run()
+def refresh_editor(filename=None, line=None, column=None, pattern=None, dry_run=False, navigate=False):
+    return VRefresher(filename, line, column, pattern, dry_run, navigate).run()
 
 def main():
     import argparse
@@ -221,6 +225,7 @@ def main():
     parser.add_argument("line", nargs="?", help="Line number", default=None)
     parser.add_argument("column", nargs="?", help="Column number", default=None)
     parser.add_argument("-p", "--pattern", help="Search pattern to jump to", default=None)
+    parser.add_argument("-n", "--navigate", action="store_true", help="Jump to the location without discarding unsaved changes (for discussion, not editing)")
     parser.add_argument("--inspect", action="store_true", help="Inspect panes and exit")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without doing it")
     args = parser.parse_args()
@@ -239,7 +244,7 @@ def main():
                 column = parts[2]
 
     filename = filename if filename and filename.strip() else None
-    if not refresh_editor(filename, line, column, args.pattern, dry_run=args.dry_run):
+    if not refresh_editor(filename, line, column, args.pattern, dry_run=args.dry_run, navigate=args.navigate):
         sys.exit(1)
 
 if __name__ == "__main__":

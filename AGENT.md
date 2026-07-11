@@ -30,3 +30,11 @@ Run `git rb` to rebase the stack onto the updated remote default branch. The nex
 
 ### Reading the stack
 A stack with several commits above the base is normal and expected. Do not squash, fixup, or collapse them — each represents intentional in-progress work.
+
+# Editor Navigation
+
+`v` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to a file/line/pattern.
+
+When you reference or describe a specific code location during discussion (a finding, an explanation, "see X"), run `v <file> <line> --navigate` (or `v <file> -p <pattern> --navigate`) so the user's nvim follows along. Always pass `--navigate` for this — it switches buffers without discarding any unsaved edits the user may have. Editing tools already trigger `v` via hooks; don't call it yourself when editing.
+
+This is best-effort: if it fails (no tmux, no editor pane), don't retry or mention it — just continue.

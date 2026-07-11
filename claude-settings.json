@@ -34,5 +34,10 @@
       }
     ]
   },
-  "editorMode": "vim"
+  "editorMode": "vim",
+  "permissions": {
+    "allow": [
+      "Bash(v:*)"
+    ]
+  }
 }
