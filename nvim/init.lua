@@ -86,23 +86,8 @@ require("lazy").setup({
     },
     config = function()
       require("mason").setup()
-      require("mason-lspconfig").setup({
-        ensure_installed = { "pyright", "jdtls" },
-      })
 
-      local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
-      -- Python Configuration
-      vim.lsp.config("pyright", {
-        capabilities = capabilities,
-        root_dir = function(bufnr, on_dir)
-          local fname = vim.api.nvim_buf_get_name(bufnr)
-          local root = require("lspconfig.util").root_pattern(".git", "pyproject.toml", "setup.py")(fname)
-            or vim.uv.cwd()
-          on_dir(root)
-        end,
-      })
-      vim.lsp.enable("pyright")
+      -- pyright and jdtls disabled: too many recent stability issues
 
       -- Global LSP Mappings
       vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = "Hover Documentation" })
