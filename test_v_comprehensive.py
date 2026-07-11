@@ -93,6 +93,26 @@ class TestVComprehensive(unittest.TestCase):
     @patch('v.VRefresher._get_pane_content')
     @patch('subprocess.run')
     @patch('os.path.abspath')
+    def test_refresh_editor_navigate_mode_uses_drop(self, mock_abspath, mock_run, mock_get_content, mock_discover, mock_sleep):
+        mock_abspath.side_effect = lambda x: f"/abs/{x}"
+        mock_get_content.return_value = "some content"
+        mock_discover.return_value = [
+            {'id': '%1', 'cmd': 'nvim', 'title': 'Editor', 'editor_on_tty': 'nvim', 'is_foreground_ps': True}
+        ]
+
+        v.refresh_editor("file.txt", line="10", navigate=True)
+
+        mock_run.assert_any_call(['tmux', 'send-keys', '-t', '%1', ':drop /abs/file.txt', 'Enter'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        mock_run.assert_any_call(['tmux', 'send-keys', '-t', '%1', ':10', 'Enter'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for c in mock_run.call_args_list:
+            cmd_sent = c[0][0]
+            if len(cmd_sent) > 4:
+                self.assertNotIn(':e!', cmd_sent[4])
+
+    @patch('v.VRefresher._discover_panes')
+    @patch('v.VRefresher._get_pane_content')
+    @patch('subprocess.run')
+    @patch('os.path.abspath')
     def test_refresh_editor_fallback_start_editor(self, mock_abspath, mock_run, mock_get_content, mock_discover, mock_sleep):
         mock_abspath.side_effect = lambda x: f"/abs/{x}"
         mock_get_content.return_value = "user@host:~$ "
@@ -252,19 +272,25 @@ class TestVComprehensive(unittest.TestCase):
         mock_argv.__getitem__.side_effect = lambda x: ["v", "file.py:10:5"][x]
         with patch('argparse._sys.argv', ["v", "file.py:10:5"]):
             v.main()
-            mock_refresh.assert_called_with("file.py", "10", "5", None, dry_run=False)
+            mock_refresh.assert_called_with("file.py", "10", "5", None, dry_run=False, navigate=False)
 
         # Test filename:line
         mock_refresh.reset_mock()
         with patch('argparse._sys.argv', ["v", "file.py:10"]):
             v.main()
-            mock_refresh.assert_called_with("file.py", "10", None, None, dry_run=False)
+            mock_refresh.assert_called_with("file.py", "10", None, None, dry_run=False, navigate=False)
 
         # Test flags
         mock_refresh.reset_mock()
         with patch('argparse._sys.argv', ["v", "file.py", "-p", "pattern", "--dry-run"]):
             v.main()
-            mock_refresh.assert_called_with("file.py", None, None, "pattern", dry_run=True)
+            mock_refresh.assert_called_with("file.py", None, None, "pattern", dry_run=True, navigate=False)
+
+        # Test navigate flag
+        mock_refresh.reset_mock()
+        with patch('argparse._sys.argv', ["v", "file.py", "-n"]):
+            v.main()
+            mock_refresh.assert_called_with("file.py", None, None, None, dry_run=False, navigate=True)
 
     @patch('v.inspect_panes')
     def test_main_inspect(self, mock_inspect, mock_sleep):
