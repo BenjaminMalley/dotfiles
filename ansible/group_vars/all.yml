@@ -36,6 +36,7 @@ homebrew_casks:
 
 optional_homebrew_formulae:
   - gh
+  - node
 
 optional_homebrew_casks:
   - blackhole-2ch
