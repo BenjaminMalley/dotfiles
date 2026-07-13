@@ -26,11 +26,28 @@ if [ "$(uname -s)" = "Darwin" ]; then
     fi
 fi
 
+# Ensure Homebrew is installed, since Apple's bundled python3 (CLT) is
+# frozen at 3.9 and too old for current Ansible releases to install into.
+if [ "$(uname -s)" = "Darwin" ] && ! command_exists brew; then
+    echo "Homebrew not found. Installing..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+if [ "$(uname -s)" = "Darwin" ]; then
+    if ! brew list --formula --versions python3 >/dev/null 2>&1; then
+        brew install python3
+    fi
+    PYTHON_BIN="$(brew --prefix python3)/bin/python3"
+else
+    PYTHON_BIN="python3"
+fi
+
 # Create a virtual environment for Ansible
 VENV_DIR=".venv"
 if [ ! -d "$VENV_DIR" ]; then
     echo "Creating virtual environment in $VENV_DIR..."
-    python3 -m venv "$VENV_DIR"
+    "$PYTHON_BIN" -m venv "$VENV_DIR"
 fi
 
 # Install Ansible in the venv
