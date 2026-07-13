@@ -19,11 +19,14 @@
 
 - name: Install Homebrew formulae
   community.general.homebrew:
-    name: "{{ item }}"
+    name: "{{ homebrew_formulae }}"
     state: present
-  loop: "{{ homebrew_formulae }}"
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
+  register: brew_install_formulae
+  until: brew_install_formulae is succeeded
+  retries: 3
+  delay: 5
   when: install_packages | default(true) | bool
 
 - name: Upgrade Homebrew formulae
@@ -35,30 +38,39 @@
 
 - name: Install Homebrew casks
   community.general.homebrew_cask:
-    name: "{{ item }}"
+    name: "{{ homebrew_casks }}"
     state: present
-  loop: "{{ homebrew_casks }}"
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
+  register: brew_install_casks
+  until: brew_install_casks is succeeded
+  retries: 3
+  delay: 5
   when: install_packages | default(true) | bool
 
 - name: Install optional Homebrew formulae
   community.general.homebrew:
-    name: "{{ item }}"
+    name: "{{ optional_homebrew_formulae }}"
     state: present
     upgrade: true
-  loop: "{{ optional_homebrew_formulae }}"
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
+  register: brew_install_optional_formulae
+  until: brew_install_optional_formulae is succeeded
+  retries: 3
+  delay: 5
   when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
 
 - name: Install optional Homebrew casks
   community.general.homebrew_cask:
-    name: "{{ item }}"
+    name: "{{ optional_homebrew_casks }}"
     state: present
-  loop: "{{ optional_homebrew_casks }}"
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
+  register: brew_install_optional_casks
+  until: brew_install_optional_casks is succeeded
+  retries: 3
+  delay: 5
   when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
 
 - name: Remove unused Homebrew dependencies (autoremove)
