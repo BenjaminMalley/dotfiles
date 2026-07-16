@@ -8,6 +8,8 @@
 [merge]
 	tool = vimdiff
 	conflictStyle = diff3
+[mergetool]
+	keepBackup = false
 [diff]
 	tool = vimdiff
 [difftool]
