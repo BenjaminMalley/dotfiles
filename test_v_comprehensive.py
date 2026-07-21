@@ -265,6 +265,29 @@ class TestVComprehensive(unittest.TestCase):
         self.assertIn("Editor", output)
         self.assertIn("last line of content", output)
 
+    @patch.dict(os.environ, {'TMUX_PANE': '%17'})
+    @patch('subprocess.check_output')
+    def test_discover_panes_scopes_to_invoking_pane(self, mock_check_output, mock_sleep):
+        # A hook firing in a background wts session must target that session's
+        # own editor, not the attached client's. _discover_panes must scope
+        # list-panes to $TMUX_PANE via -t, or tmux resolves to the wrong window.
+        mock_check_output.return_value = "%17:1:/dev/pts/0:zsh:Agent\n%18:0:/dev/pts/1:nvim:Editor"
+        v.VRefresher()._discover_panes()
+        # First call is the tmux list-panes (later calls are `ps` tty probes).
+        args = mock_check_output.call_args_list[0][0][0]
+        self.assertEqual(args[:2], ['tmux', 'list-panes'])
+        self.assertEqual(args[args.index('-t') + 1], '%17')
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch('subprocess.check_output')
+    def test_discover_panes_no_tmux_pane_omits_target(self, mock_check_output, mock_sleep):
+        # Falls back to the current window when $TMUX_PANE is unset.
+        mock_check_output.return_value = "%1:1:/dev/pts/0:zsh:Agent\n%2:0:/dev/pts/1:nvim:Editor"
+        v.VRefresher()._discover_panes()
+        args = mock_check_output.call_args_list[0][0][0]
+        self.assertEqual(args[:2], ['tmux', 'list-panes'])
+        self.assertNotIn('-t', args)
+
     @patch('v.refresh_editor')
     @patch('sys.argv')
     def test_main_parsing(self, mock_argv, mock_refresh, mock_sleep):

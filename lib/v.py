@@ -34,12 +34,18 @@ class VRefresher:
             return ""
 
     def _discover_panes(self):
-        """Finds all panes in the current window and identifies candidates."""
+        """Finds all panes in the invoking pane's window and identifies candidates."""
         try:
-            output = subprocess.check_output(
-                ['tmux', 'list-panes', '-F', '#{pane_id}:#{pane_active}:#{pane_tty}:#{pane_current_command}:#{pane_title}'],
-                text=True
-            ).strip().split('\n')
+            # Scope list-panes to the window of the pane that invoked us
+            # ($TMUX_PANE), not the attached client's current window. Without
+            # -t, tmux resolves the target against whichever session the user
+            # is currently attached to, so a hook firing in a background wts
+            # session would navigate the wrong session's editor (or none).
+            cmd = ['tmux', 'list-panes', '-F', '#{pane_id}:#{pane_active}:#{pane_tty}:#{pane_current_command}:#{pane_title}']
+            tmux_pane = os.environ.get('TMUX_PANE')
+            if tmux_pane:
+                cmd.extend(['-t', tmux_pane])
+            output = subprocess.check_output(cmd, text=True).strip().split('\n')
 
             candidates = []
             for line in output:
