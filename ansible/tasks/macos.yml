@@ -49,6 +49,8 @@
     - { domain: 'com.apple.menuextra.clock', key: 'DateFormat', type: 'string', value: 'EEE d MMM HH:mm:ss' }
     - { domain: 'com.apple.Spotlight', key: 'ClipboardHistoryEnabled', type: 'bool', value: true }
     - { domain: 'com.apple.Spotlight', key: 'ClipboardHistoryRetention', type: 'int', value: 2592000 }
+    # if this fails, it is likely to be because the terminal application has not been granted full disk access
+    - { domain: 'com.apple.Safari', key: 'TabCreationPolicy', type: 'int', value: 0 }
   notify: Restart macOS services
 
 - name: Set keyboard shortcuts
