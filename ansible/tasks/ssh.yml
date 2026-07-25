@@ -15,3 +15,29 @@
     src: "{{ playbook_dir }}/../ssh_config"
     dest: "{{ ansible_facts['user_dir'] }}/.ssh/config"
     mode: "0600"
+
+- name: Get current dotfiles origin URL  # noqa: command-instead-of-module
+  ansible.builtin.command: git remote get-url origin
+  args:
+    chdir: "{{ playbook_dir }}/.."
+  register: dotfiles_origin_url
+  changed_when: false
+
+- name: Check GitHub SSH authentication
+  ansible.builtin.command: ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -T git@github.com
+  register: github_ssh_auth
+  changed_when: false
+  failed_when: false
+  when: dotfiles_origin_url.stdout is match('^https://github\.com/')
+
+- name: Switch dotfiles origin to SSH  # noqa: command-instead-of-module
+  ansible.builtin.command: >-
+    git remote set-url origin
+    {{ dotfiles_origin_url.stdout | regex_replace('^https://github\.com/(.+?)(\.git)?$', 'git@github.com:\1.git') }}
+  args:
+    chdir: "{{ playbook_dir }}/.."
+  when:
+    - dotfiles_origin_url.stdout is match('^https://github\.com/')
+    - github_ssh_auth.stderr is defined
+    - "'successfully authenticated' in github_ssh_auth.stderr"
+  changed_when: true
