@@ -40,6 +40,7 @@ optional_homebrew_formulae:
 
 optional_homebrew_casks:
   - blackhole-2ch
+  - claude-code
   - crossover
   - dolphin
   - iina
