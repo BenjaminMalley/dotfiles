@@ -38,5 +38,6 @@
       }
     ]
   },
+  "theme": "auto",
   "editorMode": "vim"
 }
