@@ -39,5 +39,8 @@
     ]
   },
   "theme": "auto",
-  "editorMode": "vim"
+  "editorMode": "vim",
+  "enabledPlugins": {
+    "clangd-lsp@claude-plugins-official": true
+  }
 }
