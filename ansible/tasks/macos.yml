@@ -55,6 +55,10 @@
 
 - name: Set keyboard shortcuts
   ansible.builtin.shell: |
+    set -e
+    # Persist the binding. The XML plist form of -dict-add is load-bearing: it
+    # preserves integer/bool types (the inline {..} form stores strings, which
+    # are silently ignored).
     defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add {{ item.id }} "
     <dict>
         <key>enabled</key><true/>
@@ -67,9 +71,29 @@
             </array>
         </dict>
     </dict>"
+    # Activate the binding immediately. Writing the plist alone does NOT update
+    # the live hotkey registry in WindowServer (a WindowManager restart or
+    # logout is not sufficient either) — System Settings applies changes via
+    # these private SkyLight APIs, so we do the same.
+    python3 - <<'PYEOF'
+    import ctypes
+    sl = ctypes.CDLL('/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight')
+    setv = sl.CGSSetSymbolicHotKeyValue
+    setv.restype = ctypes.c_int32
+    setv.argtypes = [ctypes.c_int32, ctypes.c_uint16, ctypes.c_uint16, ctypes.c_uint64]
+    sete = sl.CGSSetSymbolicHotKeyEnabled
+    sete.restype = ctypes.c_int32
+    sete.argtypes = [ctypes.c_int32, ctypes.c_bool]
+    setv({{ item.id }}, 65535, {{ item.keycode }}, {{ item.modifiers }})
+    sete({{ item.id }}, True)
+    PYEOF
   loop:
-    - { id: 118, keycode: 123, modifiers: 1703936 } # Tile Left
-    - { id: 119, keycode: 124, modifiers: 1703936 } # Tile Right
+    # Tahoe window tiling hotkeys (Keyboard Shortcuts > Halves). The modifier
+    # value for this hotkey category always includes the fn/globe bit
+    # (0x800000), even when globe is not part of the binding:
+    # 10223616 = 0x9C0000 = globe-bit + ctrl + cmd + opt.
+    - { id: 240, keycode: 123, modifiers: 10223616 } # Tile Left Half: ctrl+cmd+opt+left
+    - { id: 241, keycode: 124, modifiers: 10223616 } # Tile Right Half: ctrl+cmd+opt+right
   changed_when: true
 
 - name: Set Night Shift
