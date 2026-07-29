@@ -40,7 +40,7 @@ class TestHooks(unittest.TestCase):
         }
         handle_gemini_payload(json.dumps(payload))
         # Line number should be calculated as 4
-        mock_run_script.assert_any_call('v', 'test.txt', '4')
+        mock_run_script.assert_any_call('peek', 'test.txt', '4')
 
     @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
@@ -54,7 +54,7 @@ class TestHooks(unittest.TestCase):
         # Notification should NOT be called for Gemini anymore
         mock_notify.assert_not_called()
         # But editor should be refreshed
-        mock_run_script.assert_called_with('v')
+        mock_run_script.assert_called_with('peek')
 
     @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
@@ -67,13 +67,13 @@ class TestHooks(unittest.TestCase):
         # Notification should NOT be called for Gemini anymore
         mock_notify.assert_not_called()
         # But editor should be refreshed
-        mock_run_script.assert_called_with('v')
+        mock_run_script.assert_called_with('peek')
 
     @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
     def test_claude_hook_stop_event(self, mock_notify, mock_run_script):
         handle_claude_stop("{}")
-        mock_run_script.assert_called_with('v')
+        mock_run_script.assert_called_with('peek')
         mock_notify.assert_not_called()
 
     @patch('lib.hooks.run_local_script')
@@ -81,7 +81,7 @@ class TestHooks(unittest.TestCase):
     def test_claude_hook_notification_event(self, mock_notify, mock_run_script):
         payload = {"cwd": "/path/to/claude-project"}
         handle_claude_notification(json.dumps(payload))
-        mock_run_script.assert_called_with('v')
+        mock_run_script.assert_called_with('peek')
         mock_notify.assert_called_with("Input Required", "Claude (claude-project)")
 
     @patch('lib.hooks.run_local_script')
@@ -92,7 +92,7 @@ class TestHooks(unittest.TestCase):
             "tool_input": {"file_path": "/path/to/newfile.py", "content": "print('hello')"},
         }
         handle_claude_edit(json.dumps(payload))
-        mock_run_script.assert_called_with('v', '/path/to/newfile.py', '1')
+        mock_run_script.assert_called_with('peek', '/path/to/newfile.py', '1')
         mock_notify.assert_not_called()
 
     @patch('builtins.open', create=True)
@@ -116,7 +116,7 @@ class TestHooks(unittest.TestCase):
             },
         }
         handle_claude_edit(json.dumps(payload))
-        mock_run_script.assert_called_with('v', '/path/to/file.py', '5')
+        mock_run_script.assert_called_with('peek', '/path/to/file.py', '5')
         mock_notify.assert_not_called()
 
     @patch('lib.hooks.run_local_script')
@@ -131,7 +131,7 @@ class TestHooks(unittest.TestCase):
             },
         }
         handle_claude_edit(json.dumps(payload))
-        mock_run_script.assert_called_with('v', '/nonexistent/file.py')
+        mock_run_script.assert_called_with('peek', '/nonexistent/file.py')
         mock_notify.assert_not_called()
 
 if __name__ == '__main__':

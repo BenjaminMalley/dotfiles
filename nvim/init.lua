@@ -4,6 +4,26 @@ vim.cmd('source ~/.vimrc')
 -- Faster completion and diagnostic feedback
 vim.opt.updatetime = 300
 
+-- Reload externally-changed buffers on :checktime without prompting (peek
+-- sends checktime explicitly; unmodified buffers reload silently).
+-- Already set via the sourced ~/.vimrc; stated here for intent.
+vim.o.autoread = true
+
+-- Per-tmux-pane RPC socket so `peek` can drive this instance.
+local pane = vim.env.TMUX_PANE
+if pane and pane ~= "" then
+  local sock = "/tmp/nvim-" .. (vim.env.USER or "") .. "-" .. pane .. ".sock"
+  local ok = pcall(vim.fn.serverstart, sock)
+  if not ok then
+    -- Stale socket from a crashed nvim in this pane; remove and retry once.
+    pcall(vim.fn.delete, sock)
+    pcall(vim.fn.serverstart, sock)
+  end
+  vim.api.nvim_create_autocmd("VimLeave", {
+    callback = function() pcall(vim.fn.delete, sock) end,
+  })
+end
+
 -- Clear search highlights on Escape
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = "Clear search highlights" })
 

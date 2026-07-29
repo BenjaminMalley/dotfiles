@@ -33,8 +33,8 @@ A stack with several commits above the base is normal and expected. Do not squas
 
 # Editor Navigation
 
-`v` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to a file/line/pattern.
+`peek` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to a file/line/pattern.
 
-When you reference or describe a specific code location during discussion (a finding, an explanation, "see X"), run `v <file> <line> --navigate` (or `v <file> -p <pattern> --navigate`) so the user's nvim follows along. Always pass `--navigate` for this — it switches buffers without discarding any unsaved edits the user may have. Editing tools already trigger `v` via hooks; don't call it yourself when editing.
+When you reference or describe a specific code location during discussion (a finding, an explanation, "see X"), run `peek <file> <line>` (or `peek -p <pattern> <file>`) so the user's nvim follows along. It never discards unsaved edits. Editing tools already trigger `peek` via hooks; don't call it yourself when editing.
 
 This is best-effort: if it fails (no tmux, no editor pane), don't retry or mention it — just continue.
