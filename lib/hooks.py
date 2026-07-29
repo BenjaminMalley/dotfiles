@@ -7,8 +7,8 @@ from lib.notifications import send_notification
 
 def run_local_script(script_name, *args):
     """Helper to run a script in the scripts directory."""
-    # We maintain this for now to interact with existing scripts like 'v'
-    # but eventually 'v' can also be moved into the library.
+    # We maintain this for now to interact with existing scripts like 'peek'
+    # but eventually 'peek' can also be moved into the library.
     repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     script_path = os.path.join(repo_root, 'scripts', script_name)
     try:
@@ -27,7 +27,7 @@ def handle_gemini_payload(payload_str):
 
         # Refresh editor on completion or when attention is needed
         if event in ['AfterAgent', 'Notification']:
-            run_local_script('v')
+            run_local_script('peek')
 
         # Check for file modification tools to trigger editor refresh/jump
         if event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
@@ -44,9 +44,9 @@ def handle_gemini_payload(payload_str):
                     pass
 
                 if line_num:
-                    run_local_script('v', file_path, line_num)
+                    run_local_script('peek', file_path, line_num)
                 else:
-                    run_local_script('v', file_path)
+                    run_local_script('peek', file_path)
 
     except Exception as e:
         sys.stderr.write(f"Error processing Gemini payload: {e}\n")
@@ -88,9 +88,9 @@ def handle_claude_edit(payload_str):
         if file_path:
             line_num = calculate_claude_line_number(data)
             if line_num:
-                run_local_script('v', file_path, str(line_num))
+                run_local_script('peek', file_path, str(line_num))
             else:
-                run_local_script('v', file_path)
+                run_local_script('peek', file_path)
     except Exception as e:
         sys.stderr.write(f"Error processing Claude edit payload: {e}\n")
     return "{}"
@@ -101,7 +101,7 @@ def handle_claude_stop(payload_str):
     if not payload_str:
         return "{}"
     try:
-        run_local_script('v')
+        run_local_script('peek')
     except Exception as e:
         sys.stderr.write(f"Error processing Claude stop payload: {e}\n")
     return "{}"
@@ -115,7 +115,7 @@ def handle_claude_notification(payload_str):
         data = json.loads(payload_str)
         cwd = data.get('cwd', '')
         project_name = os.path.basename(cwd) if cwd else 'Claude'
-        run_local_script('v')
+        run_local_script('peek')
         send_notification("Input Required", f"Claude ({project_name})")
     except Exception as e:
         sys.stderr.write(f"Error processing Claude notification payload: {e}\n")

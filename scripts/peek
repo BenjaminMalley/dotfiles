@@ -6,7 +6,7 @@ import os
 repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, repo_root)
 
-from lib.v import main
+from lib.peek import main
 
 if __name__ == "__main__":
     main()

@@ -53,7 +53,7 @@ Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`*
 - **tmux**: Configured in `.tmux.conf`
 - **Vim/Neovim**: Configured in `.vimrc` and `nvim/`
 - **Ghostty**: Configured in `ghostty/config`
-- **Scripts**: Located in `scripts/` (e.g., `v`, `wts`, `dotfiles`)
+- **Scripts**: Located in `scripts/` (e.g., `peek`, `wts`, `dotfiles`)
 
 ## Worktree Session Tool (`wts`)
 
