@@ -162,23 +162,6 @@ require("lazy").setup({
 
   -- Java Support (Specialized)
   { "mfussenegger/nvim-jdtls" },
-
-  -- Treesitter (required for Conjure Python client)
-  {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    config = function()
-      local ok, configs = pcall(require, "nvim-treesitter.configs")
-      if not ok then return end
-      configs.setup({
-        ensure_installed = { "python", "c" },
-        highlight = { enable = true },
-      })
-    end,
-  },
-
-  -- Interactive evaluation for Lisps and more
-  { "Olical/conjure" },
 }, {
   ui = { border = "rounded" },
   checker = { enabled = false },
