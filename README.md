@@ -72,7 +72,7 @@ Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`*
 - `wts -a <session-name>`: Attach to an existing tmux session.
 
 ### Configuration
-- `WTS_AGENT_CMD`: Set this environment variable in your `.zshrc` to automatically run a command (like `gemini` or `claude`) in the Agent pane upon session creation.
+- `WTS_AGENT_CMD`: Set this environment variable in your `.zshrc` to automatically run a command (like `claude`) in the Agent pane upon session creation.
 
 ## Git Shortcuts
 

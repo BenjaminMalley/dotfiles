@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import os
 import sys
 import json
@@ -9,7 +9,7 @@ import io
 sys.path.insert(0, os.path.dirname(__file__))
 
 from lib.notifications import send_notification
-from lib.hooks import handle_gemini_payload, handle_claude_edit, handle_claude_stop, handle_claude_notification
+from lib.hooks import handle_claude_edit, handle_claude_stop, handle_claude_notification
 
 class TestNotifications(unittest.TestCase):
     @patch('platform.system', return_value='Darwin')
@@ -30,51 +30,9 @@ class TestNotifications(unittest.TestCase):
 
 class TestHooks(unittest.TestCase):
     @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_gemini_hook_refresh(self, mock_notify, mock_run_script):
-        payload = {
-            "hook_event_name": "AfterTool",
-            "tool_name": "write_file",
-            "tool_input": {"file_path": "test.txt"},
-            "tool_response": {"returnDisplay": {"fileDiff": "@@ -1,1 +1,4 @@\n+line1\n+line2\n+line3"}}
-        }
-        handle_gemini_payload(json.dumps(payload))
-        # Line number should be calculated as 4
-        mock_run_script.assert_any_call('peek', 'test.txt', '4')
-
-    @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_gemini_hook_notify(self, mock_notify, mock_run_script):
-        payload = {
-            "hook_event_name": "Notification",
-            "notification_type": "InputRequired",
-            "cwd": "/path/to/project"
-        }
-        handle_gemini_payload(json.dumps(payload))
-        # Notification should NOT be called for Gemini anymore
-        mock_notify.assert_not_called()
-        # But editor should be refreshed
-        mock_run_script.assert_called_with('peek')
-
-    @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_gemini_hook_after_agent(self, mock_notify, mock_run_script):
-        payload = {
-            "hook_event_name": "AfterAgent",
-            "cwd": "/path/to/project"
-        }
-        handle_gemini_payload(json.dumps(payload))
-        # Notification should NOT be called for Gemini anymore
-        mock_notify.assert_not_called()
-        # But editor should be refreshed
-        mock_run_script.assert_called_with('peek')
-
-    @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_claude_hook_stop_event(self, mock_notify, mock_run_script):
+    def test_claude_hook_stop_event(self, mock_run_script):
         handle_claude_stop("{}")
         mock_run_script.assert_called_with('peek')
-        mock_notify.assert_not_called()
 
     @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
@@ -85,20 +43,17 @@ class TestHooks(unittest.TestCase):
         mock_notify.assert_called_with("Input Required", "Claude (claude-project)")
 
     @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_claude_hook_write_tool(self, mock_notify, mock_run_script):
+    def test_claude_hook_write_tool(self, mock_run_script):
         payload = {
             "tool_name": "Write",
             "tool_input": {"file_path": "/path/to/newfile.py", "content": "print('hello')"},
         }
         handle_claude_edit(json.dumps(payload))
         mock_run_script.assert_called_with('peek', '/path/to/newfile.py', '1')
-        mock_notify.assert_not_called()
 
     @patch('builtins.open', create=True)
     @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_claude_hook_edit_tool_with_line(self, mock_notify, mock_run_script, mock_open):
+    def test_claude_hook_edit_tool_with_line(self, mock_run_script, mock_open):
         mock_open.return_value.__enter__.return_value = iter([
             "line 1\n",
             "line 2\n",
@@ -117,11 +72,9 @@ class TestHooks(unittest.TestCase):
         }
         handle_claude_edit(json.dumps(payload))
         mock_run_script.assert_called_with('peek', '/path/to/file.py', '5')
-        mock_notify.assert_not_called()
 
     @patch('lib.hooks.run_local_script')
-    @patch('lib.hooks.send_notification')
-    def test_claude_hook_edit_tool_fallback(self, mock_notify, mock_run_script):
+    def test_claude_hook_edit_tool_fallback(self, mock_run_script):
         payload = {
             "tool_name": "Edit",
             "tool_input": {
@@ -132,7 +85,6 @@ class TestHooks(unittest.TestCase):
         }
         handle_claude_edit(json.dumps(payload))
         mock_run_script.assert_called_with('peek', '/nonexistent/file.py')
-        mock_notify.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,8 +6,6 @@
   loop:
     - .config/ghostty
     - .config/nvim
-    - .gemini
-    - .gemini/policies
     - .claude/agents
 
 - name: Ensure ~/.gitconfig includes gitconfig.base
@@ -45,21 +43,9 @@
   with_fileglob:
     - "{{ playbook_dir }}/../agents/*"
 
-- name: Symlink gemini policies
-  ansible.builtin.file:
-    src: "{{ item }}"
-    dest: "{{ ansible_facts['user_dir'] }}/.gemini/policies/{{ item | basename }}"
-    state: link
-    force: true
-  with_fileglob:
-    - "{{ playbook_dir }}/../gemini/policies/*"
-
 - name: Symlink scripts directory
   ansible.builtin.file:
     src: "{{ playbook_dir }}/../scripts"
-    dest: "{{ ansible_facts['user_dir'] }}/{{ item }}/scripts"
+    dest: "{{ ansible_facts['user_dir'] }}/.claude/scripts"
     state: link
     force: true
-  loop:
-    - ".gemini"
-    - ".claude"
