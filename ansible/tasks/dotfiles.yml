@@ -7,6 +7,7 @@
     - .config/ghostty
     - .config/nvim
     - .claude/agents
+    - .claude/skills
 
 - name: Ensure ~/.gitconfig includes gitconfig.base
   ansible.builtin.blockinfile:
@@ -42,6 +43,16 @@
     force: true
   with_fileglob:
     - "{{ playbook_dir }}/../agents/*"
+
+- name: Symlink skill directories
+  ansible.builtin.file:
+    src: "{{ item }}"
+    dest: "{{ ansible_facts['user_dir'] }}/.claude/skills/{{ item | basename }}"
+    state: link
+    force: true
+  with_fileglob:
+    - "{{ playbook_dir }}/../skills/*"
+  when: item is directory
 
 - name: Symlink scripts directory
   ansible.builtin.file:
