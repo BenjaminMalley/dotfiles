@@ -28,6 +28,7 @@
     - name: Finalize configuration
       ansible.builtin.shell: |
         gh config set prompt disabled
+        gh alias set prc '!gh pr create -f --head "$(git branch --show-current)"'
         if tmux info &>/dev/null; then
           tmux set-hook -ug client-attached;
           tmux set-hook -ug pane-focus-in;
