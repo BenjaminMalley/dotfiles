@@ -2,7 +2,6 @@ import sys
 import json
 import os
 import subprocess
-import re
 from lib.notifications import send_notification
 
 def run_local_script(script_name, *args):
@@ -15,43 +14,6 @@ def run_local_script(script_name, *args):
         subprocess.run([script_path, *args], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         sys.stderr.write(f"Error running {script_name}: {e}\n")
-
-def handle_gemini_payload(payload_str):
-    """Processes the Gemini hook payload."""
-    if not payload_str:
-        return "{}"
-
-    try:
-        data = json.loads(payload_str)
-        event = data.get('hook_event_name', '')
-
-        # Refresh editor on completion or when attention is needed
-        if event in ['AfterAgent', 'Notification']:
-            run_local_script('peek')
-
-        # Check for file modification tools to trigger editor refresh/jump
-        if event == 'AfterTool' and data.get('tool_name') in ['write_file', 'replace']:
-            tool_input = data.get('tool_input', {})
-            file_path = tool_input.get('file_path')
-            if file_path:
-                line_num = None
-                try:
-                    diff = data.get('tool_response', {}).get('returnDisplay', {}).get('fileDiff', '')
-                    match = re.search(r'@@ -\d+,\d+ \+(\d+),\d+ @@', diff)
-                    if match:
-                        line_num = str(int(match.group(1)) + 3)
-                except Exception:
-                    pass
-
-                if line_num:
-                    run_local_script('peek', file_path, line_num)
-                else:
-                    run_local_script('peek', file_path)
-
-    except Exception as e:
-        sys.stderr.write(f"Error processing Gemini payload: {e}\n")
-
-    return "{}"
 
 def calculate_claude_line_number(data):
     """Calculate line number for Claude Edit/Write tools."""
