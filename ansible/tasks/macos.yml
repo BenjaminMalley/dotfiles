@@ -17,6 +17,12 @@
       ansible.builtin.pause:
         prompt: "You are not signed into iCloud. The iCloud settings pane has been opened; please sign in to enable sync features, then press Enter to continue."
 
+- name: Symlink iCloud Drive into home directory
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/Library/Mobile Documents/com~apple~CloudDocs"
+    dest: "{{ ansible_env.HOME }}/iCloud"
+    state: link
+
 - name: Set macOS preferences
   community.general.osx_defaults:
     domain: "{{ item.domain }}"
