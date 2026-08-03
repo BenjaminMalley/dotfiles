@@ -55,6 +55,16 @@
       }
     ]
   },
+  "sandbox": {
+    "enabled": true,
+    "credentials": {
+      "files": [
+        { "path": "~/.ssh", "mode": "deny" },
+        { "path": "~/.aws", "mode": "deny" },
+        { "path": "~/.gnupg", "mode": "deny" }
+      ]
+    }
+  },
   "theme": "auto",
   "editorMode": "vim",
   "enabledPlugins": {
