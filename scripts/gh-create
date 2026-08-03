@@ -1,0 +1,32 @@
+#!/bin/bash
+# gh-create: create a GitHub repo configured for the stacked-commit workflow.
+#
+# Applies repo settings after creation:
+# - rebase merges only (squash and merge commits disabled)
+# - head branches deleted automatically on merge
+#
+# Usage: gh-create <name> [gh repo create flags...]
+#   <name> may be a bare repo name (created under your user) or owner/name.
+#   All remaining arguments pass through to `gh repo create`.
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+  echo "usage: gh-create <name> [gh repo create flags...]" >&2
+  exit 1
+fi
+
+name="$1"; shift
+
+gh repo create "$name" "$@"
+
+case "$name" in
+  */*) full="$name" ;;
+  *)   full="$(gh api user --jq .login)/$name" ;;
+esac
+
+gh api "repos/$full" -X PATCH \
+  -F delete_branch_on_merge=true \
+  -F allow_rebase_merge=true \
+  -F allow_squash_merge=false \
+  -F allow_merge_commit=false \
+  --jq '"configured: \(.full_name) (rebase merge only, auto-delete head branches)"'
