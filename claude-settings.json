@@ -7,7 +7,9 @@
       "WebSearch",
       "Bash(peek:*)",
       "Bash(git *)",
-      "Bash(gh *)"
+      "Bash(gh *)",
+      "Bash(ps:*)",
+      "Bash(osascript:*)"
     ],
     "ask": [
       "Bash(git push)",
@@ -57,6 +59,7 @@
   },
   "sandbox": {
     "enabled": true,
+    "excludedCommands": ["ps", "osascript", "gh"],
     "credentials": {
       "files": [
         { "path": "~/.ssh", "mode": "deny" },
