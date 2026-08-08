@@ -32,6 +32,16 @@ Run `git rb` to rebase the stack onto the updated remote default branch. The
 next commit in the stack becomes the new bottom; push it with `git push-base`
 to open the next PR.
 
+# Sandbox
+Bash runs sandboxed: process inspection and Apple Events are blocked.
+
+- Launch processes you must observe yourself with `run_in_background`;
+  user-launched processes are invisible to you.
+- Use `dangerouslyDisableSandbox: true` when a command needs Apple Events,
+  process inspection, or broad network — or returns empty/zero output
+  without an error. `excludedCommands` does not cover children of a
+  sandboxed parent.
+
 # Editor Navigation
 `peek` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to
 a file/line/pattern.
