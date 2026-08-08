@@ -9,7 +9,18 @@
       "Bash(git *)",
       "Bash(gh *)",
       "Bash(ps:*)",
-      "Bash(osascript:*)"
+      "Bash(osascript:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(echo:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(mdfind:*)",
+      "Bash(fd:*)",
+      "Bash(rg:*)"
     ],
     "ask": [
       "Bash(git push)",
