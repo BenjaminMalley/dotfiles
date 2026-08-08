@@ -41,6 +41,13 @@ Bash runs sandboxed: process inspection and Apple Events are blocked.
   process inspection, or broad network — or returns empty/zero output
   without an error. `excludedCommands` does not cover children of a
   sandboxed parent.
+- Backslash escapes trigger a permission prompt. Quote paths with spaces
+  (`"$HOME/Library/Group Containers"`); use `-exec ... {} +` not `\;`.
+
+# Search Tools
+Use `rg` instead of `grep` and `fd` instead of `find`. Both skip hidden
+and gitignored files by default; if results look thin, retry with
+`--hidden --no-ignore`.
 
 # Editor Navigation
 `peek` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to
