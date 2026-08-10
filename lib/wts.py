@@ -107,17 +107,8 @@ class WtsManager:
             if subprocess.run(['git', 'show-ref', '--verify', '--quiet', f'refs/heads/{self.branch_name}']).returncode == 0:
                 target_branch = self.branch_name
             else:
-                try:
-                    create = input(f"Branch '{self.full_branch_name}' does not exist. Create it? (y/n) ")
-                    if create.lower() == 'y':
-                        run_command(['git', 'branch', self.full_branch_name])
-                        target_branch = self.full_branch_name
-                    else:
-                        print("Aborting.")
-                        sys.exit(0)
-                except (EOFError, KeyboardInterrupt):
-                    print("\nAborting.")
-                    sys.exit(0)
+                run_command(['git', 'branch', self.full_branch_name])
+                target_branch = self.full_branch_name
 
         print(f"Creating worktree for branch '{target_branch}' at {self.target_dir}...")
         run_command(['git', 'worktree', 'add', str(self.target_dir), target_branch])
