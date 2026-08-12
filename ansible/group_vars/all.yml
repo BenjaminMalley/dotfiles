@@ -6,8 +6,12 @@ dotfiles:
   - { source: "vimrc", dest: ".vimrc" }
   - { source: "nvim", dest: ".config/nvim" }
   - { source: "ghostty/config", dest: ".config/ghostty/config" }
-  - { source: "claude-settings.json", dest: ".claude/settings.json" }
   - { source: "AGENT.md", dest: ".claude/CLAUDE.md" }
+
+# ~/.claude/settings.json is generated (not symlinked) so it can merge in an
+# optional machine-local override file. See the "Generate merged Claude Code
+# settings" task in tasks/dotfiles.yml.
+claude_local_settings_path: "{{ ansible_facts['user_dir'] }}/repos/dotfiles-local/claude/settings.local.json"
 
 optional_dotfiles:
   - { source: "editorconfig", dest: ".editorconfig", description: "global editorconfig file" }
