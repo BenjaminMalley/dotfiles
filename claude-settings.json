@@ -20,7 +20,34 @@
       "Bash(wc:*)",
       "Bash(mdfind:*)",
       "Bash(fd:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(git branch)",
+      "Bash(git branch -a)",
+      "Bash(git branch -r)",
+      "Bash(git branch -v)",
+      "Bash(git branch -vv)",
+      "Bash(git branch -l)",
+      "Bash(git branch --list)",
+      "Bash(git branch --show-current)",
+      "Bash(dig:*)",
+      "Bash(host:*)",
+      "Bash(nslookup:*)",
+      "Bash(nc:*)",
+      "Bash(scutil:*)",
+      "Bash(netstat:*)",
+      "Bash(route:*)",
+      "Bash(system_profiler:*)",
+      "Bash(systemextensionsctl:*)",
+      "Bash(launchctl list*)",
+      "Bash(lsof:*)",
+      "Bash(dscacheutil:*)",
+      "Bash(pluginkit:*)",
+      "Bash(jq:*)",
+      "Bash(diff:*)",
+      "Bash(defaults read*)",
+      "Bash(plutil -p*)",
+      "Bash(curl:*)",
+      "Bash(sudo pfctl -s *)"
     ],
     "ask": [
       "Bash(git push)",
@@ -74,7 +101,7 @@
     ]
   },
   "sandbox": {
-    "enabled": true,
+    "enabled": false,
     "excludedCommands": ["ps", "osascript", "gh", "git", "ssh", "nc"],
     "filesystem": {
       "denyRead": ["~/.ssh"]
