@@ -9,6 +9,26 @@
     - .claude/agents
     - .claude/skills
 
+- name: Check for machine-local Claude Code settings overrides
+  ansible.builtin.stat:
+    path: "{{ claude_local_settings_path }}"
+  register: claude_local_settings_stat
+
+- name: Generate merged ~/.claude/settings.json
+  ansible.builtin.copy:
+    content: >-
+      {{
+        (lookup('file', playbook_dir + '/../claude-settings.json') | from_json)
+        | combine(
+            (lookup('file', claude_local_settings_path) | from_json) if claude_local_settings_stat.stat.exists else {},
+            recursive=true,
+            list_merge='append_rp'
+          )
+        | to_nice_json
+      }}
+    dest: "{{ ansible_facts['user_dir'] }}/.claude/settings.json"
+    mode: "0644"
+
 - name: Ensure ~/.gitconfig includes gitconfig.base
   ansible.builtin.blockinfile:
     path: "{{ ansible_facts['user_dir'] }}/.gitconfig"

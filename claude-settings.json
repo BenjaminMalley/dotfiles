@@ -31,7 +31,12 @@
       "Bash(git clean *)",
       "Bash(gh pr merge *)",
       "Bash(gh pr close *)",
-      "Bash(gh release *)"
+      "Bash(gh release *)",
+      "Bash(git checkout -b *)",
+      "Bash(git checkout -B *)",
+      "Bash(git switch -c *)",
+      "Bash(git switch -C *)",
+      "Bash(git branch *)"
     ]
   },
   "hooks": {
@@ -70,10 +75,12 @@
   },
   "sandbox": {
     "enabled": true,
-    "excludedCommands": ["ps", "osascript", "gh"],
+    "excludedCommands": ["ps", "osascript", "gh", "git", "ssh", "nc"],
+    "filesystem": {
+      "denyRead": ["~/.ssh"]
+    },
     "credentials": {
       "files": [
-        { "path": "~/.ssh", "mode": "deny" },
         { "path": "~/.aws", "mode": "deny" },
         { "path": "~/.gnupg", "mode": "deny" }
       ]
