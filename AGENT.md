@@ -49,6 +49,16 @@ Use `rg` instead of `grep` and `fd` instead of `find`. Both skip hidden
 and gitignored files by default; if results look thin, retry with
 `--hidden --no-ignore`.
 
+# Comments
+Write a test case, not a comment, when you can. A test proves the
+behavior; a comment only claims it.
+
+Add a comment only for a non-obvious fact that no test can capture: a
+constraint from outside the code (a spec, a bug ticket, an API quirk), a
+reason a simpler approach was rejected, or a hidden invariant the reader
+could break without warning. Do not write comments that restate what the
+code does — the code already says that.
+
 # Editor Navigation
 `peek` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to
 a file/line/pattern.
