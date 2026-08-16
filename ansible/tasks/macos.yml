@@ -112,6 +112,63 @@
     - { id: 241, keycode: 124, modifiers: 10223616 } # Tile Right Half: ctrl+cmd+opt+right
   changed_when: true
 
+- name: Disable the Caps Lock key (No Action)
+  ansible.builtin.shell: |
+    set -e
+    python3 - <<'PYEOF'
+    import plistlib
+    import subprocess
+
+    # Mapping values are 0x700000000 (HID usage page 7) OR-ed with the key
+    # usage: 0x39 is Caps Lock, 0x00 is "Reserved (no event indicated)".
+    CAPS_LOCK = 30064771129
+    NO_ACTION = 30064771072
+
+    # System Settings keys modifier mappings per keyboard event service as
+    # com.apple.keyboard.modifiermapping.<VendorID>-<ProductID>-0 (decimal).
+    # The built-in keyboard reports VendorID/ProductID 0, hence domain 0-0-0.
+    out = subprocess.run(
+        ["ioreg", "-c", "IOHIDEventService", "-r", "-a"],
+        capture_output=True, check=True).stdout
+    keyboards = sorted({(s["VendorID"], s["ProductID"]) for s in plistlib.loads(out)
+                        if s.get("PrimaryUsagePage") == 1 and s.get("PrimaryUsage") == 6
+                        and "VendorID" in s and "ProductID" in s})
+
+    out = subprocess.run(
+        ["defaults", "-currentHost", "export", "-g", "-"],
+        capture_output=True, check=True).stdout
+    prefs = plistlib.loads(out)
+
+    changed = []
+    for vid, pid in keyboards:
+        key = f"com.apple.keyboard.modifiermapping.{vid}-{pid}-0"
+        current = prefs.get(key, [])
+        desired = [m for m in current
+                   if m.get("HIDKeyboardModifierMappingSrc") != CAPS_LOCK]
+        desired.append({"HIDKeyboardModifierMappingSrc": CAPS_LOCK,
+                        "HIDKeyboardModifierMappingDst": NO_ACTION})
+        if current == desired:
+            continue
+        args = ["defaults", "-currentHost", "write", "-g", key, "-array"]
+        args += ["<dict>"
+                 f"<key>HIDKeyboardModifierMappingSrc</key><integer>{m['HIDKeyboardModifierMappingSrc']}</integer>"
+                 f"<key>HIDKeyboardModifierMappingDst</key><integer>{m['HIDKeyboardModifierMappingDst']}</integer>"
+                 "</dict>" for m in desired]
+        subprocess.run(args, check=True)
+        changed.append(key)
+
+    for key in changed:
+        print(f"updated {key}")
+    print("RESULT=CHANGED" if changed else "RESULT=UNCHANGED")
+    PYEOF
+  register: caps_lock_mapping
+  changed_when: "'RESULT=CHANGED' in caps_lock_mapping.stdout"
+
+- name: Note that the Caps Lock change applies at next login
+  ansible.builtin.debug:
+    msg: "Caps Lock is set to No Action. It takes effect after the next login."
+  when: caps_lock_mapping is changed # noqa: no-handler
+
 - name: Set Night Shift
   ansible.builtin.shell: |
     osascript -l JavaScript -e '
