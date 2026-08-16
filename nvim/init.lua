@@ -13,12 +13,28 @@ vim.o.autoread = true
 local pane = vim.env.TMUX_PANE
 if pane and pane ~= "" then
   local sock = "/tmp/nvim-" .. (vim.env.USER or "") .. "-" .. pane .. ".sock"
-  local ok = pcall(vim.fn.serverstart, sock)
-  if not ok then
-    -- Stale socket from a crashed nvim in this pane; remove and retry once.
-    pcall(vim.fn.delete, sock)
-    pcall(vim.fn.serverstart, sock)
+
+  local function ensure_socket()
+    if vim.fn.getftype(sock) == "socket" then
+      return
+    end
+    local ok = pcall(vim.fn.serverstart, sock)
+    if not ok then
+      -- Stale socket from a crashed nvim in this pane; remove and retry once.
+      pcall(vim.fn.delete, sock)
+      pcall(vim.fn.serverstart, sock)
+    end
   end
+
+  ensure_socket()
+
+  -- Self-heal if the initial serverstart was skipped or interrupted, e.g.
+  -- nvim got suspended (Ctrl-Z) before finishing startup: VimResume covers
+  -- resuming from that, FocusGained covers regaining the pane later.
+  vim.api.nvim_create_autocmd({ "VimResume", "FocusGained" }, {
+    callback = ensure_socket,
+  })
+
   vim.api.nvim_create_autocmd("VimLeave", {
     callback = function() pcall(vim.fn.delete, sock) end,
   })
