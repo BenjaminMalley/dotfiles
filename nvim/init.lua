@@ -40,6 +40,34 @@ if pane and pane ~= "" then
   })
 end
 
+-- Without this autocmd, :checktime blocks on a confirm() dialog whenever
+-- a file changes on disk while its buffer here has unsaved edits (agent
+-- edits are the common case). peek's remote checktime call then times out
+-- and leaves the dialog stuck in this pane until answered by hand. Taking
+-- over here keeps checktime non-blocking; :AgentDiff below is the manual
+-- merge path for when it actually happens.
+vim.api.nvim_create_autocmd("FileChangedShell", {
+  callback = function(args)
+    local reason = vim.v.fcs_reason
+    if reason == "mode" or reason == "time" then
+      vim.v.fcs_choice = "reload"
+      return
+    end
+    vim.v.fcs_choice = ""
+    local msg = reason == "conflict"
+      and "changed on disk while this buffer has unsaved edits -- run :AgentDiff to merge"
+      or "was deleted on disk -- this buffer still holds its contents"
+    vim.schedule(function()
+      vim.notify(vim.fn.fnamemodify(args.file, ":~:.") .. " " .. msg, vim.log.levels.WARN)
+    end)
+  end,
+})
+
+vim.api.nvim_create_user_command("AgentDiff", function()
+  vim.cmd("vertical diffsplit " .. vim.fn.fnameescape(vim.fn.expand("%:p")))
+end, { desc = "Diff this buffer against its on-disk version after an external change" })
+vim.keymap.set('n', '<leader>cd', '<cmd>AgentDiff<CR>', { desc = "Diff buffer vs disk (conflict)" })
+
 -- Clear search highlights on Escape
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = "Clear search highlights" })
 
