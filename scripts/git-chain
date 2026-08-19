@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import sys
+import os
+import argparse
+
+# Add repo root to sys.path to allow importing lib
+repo_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, repo_root)
+
+from lib.git_chain import ChainError, cmd_fold, cmd_grow, cmd_list, cmd_shrink, cmd_unfold
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='git-chain',
+        description='A chain of dependent commits with a fold: unfold the chain to build on it, fold it back to the reviewed frame.')
+    sub = parser.add_subparsers(dest='command', required=True)
+    sub.add_parser('fold', help='absorb new commits and fold the chain back to the reviewed frame')
+    sub.add_parser('unfold', help='unfold the full chain into the working branch')
+    sub.add_parser('list', help='show frames in the working branch and folded on the chain branch')
+    grow = sub.add_parser('grow', help='move the fold up the chain (include folded frames in the working branch)')
+    grow.add_argument('count', nargs='?', type=int, default=1)
+    shrink = sub.add_parser('shrink', help='move the fold down the chain (exclude frames from the working branch)')
+    shrink.add_argument('count', nargs='?', type=int, default=1)
+
+    args = parser.parse_args()
+
+    try:
+        if args.command == 'grow':
+            cmd_grow(args.count)
+        elif args.command == 'shrink':
+            cmd_shrink(args.count)
+        else:
+            {'fold': cmd_fold, 'unfold': cmd_unfold, 'list': cmd_list}[args.command]()
+    except ChainError as e:
+        print(f'git chain: {e}', file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
