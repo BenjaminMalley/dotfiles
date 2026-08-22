@@ -167,6 +167,43 @@ class TestGitChain(unittest.TestCase):
         tip = self.rev('feature-chain')
         self.assertEqual(self.git('show', f'{tip}:f3.txt').stdout, 'f3')
 
+    def test_unfold_after_rebase_onto_merge_that_rewrote_frame(self):
+        """The frame merged upstream with a new SHA (squash merge) and the
+        branch was rebased onto the new trunk while still folded."""
+        f1, f3 = self.make_rest_state()
+
+        # Merge f1's patch into main as a new commit, as a squash merge does.
+        other = os.path.join(self.test_dir, 'other')
+        subprocess.run(['git', 'clone', self.origin, other],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.git('config', 'user.email', 'test@example.com', cwd=other)
+        self.git('config', 'user.name', 'Test User', cwd=other)
+        self.git('cherry-pick', '--no-commit', 'origin/feature', cwd=other)
+        self.git('commit', '-m', 'f1 squashed', cwd=other)
+        self.git('push', 'origin', 'main', cwd=other)
+
+        # Rebase onto the new trunk while still folded ('git rb'): the local
+        # f1 drops as already upstream and feature lands on the trunk tip.
+        self.git('fetch', 'origin')
+        self.git('rebase', 'origin/main')
+        self.assertEqual(self.rev('feature'), self.rev('origin/main'))
+
+        self.chain('unfold')
+
+        # The chain was replayed onto the rebased branch; feature holds the rest.
+        self.assertEqual(self.rev('feature'), self.rev('feature-chain'))
+        self.assertEqual(self.frames('origin/main..feature'), ['f3', 'f2'])
+        tip = self.rev('feature')
+        self.assertEqual(self.git('show', f'{tip}:f3.txt').stdout, 'f3')
+        self.assertEqual(self.git('show', f'{tip}:f2.txt').stdout, 'f2')
+
+    def test_unfold_refuses_new_work_beyond_the_fold(self):
+        self.make_rest_state()
+        self.commit_file('extra.txt', 'extra', 'extra')
+        res = self.chain('unfold', check=False)
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn('unfolded changes', res.stderr)
+
     def test_pointer_survives_repeated_cycles(self):
         f1, f3 = self.make_rest_state()
         self.chain('unfold')

@@ -166,7 +166,20 @@ def cmd_unfold():
         print('nothing to unfold (working branch already at chain tip)')
         return
     if not _is_ancestor(branch, chain):
-        raise ChainError("working branch has unfolded changes; run 'git chain fold' first")
+        if _out(['rev-list', branch, f'^{chain}', f'^{trunk}']):
+            raise ChainError("working branch has unfolded changes; run 'git chain fold' first")
+        # The fold's frames merged upstream (with new SHAs, as a squash or
+        # rebase merge produces) and the branch was rebased onto the new trunk
+        # before unfolding; replay the rest of the chain on top of it.
+        base = _out(['merge-base', branch, chain])
+        res = _git(['rebase', '--onto', branch, base, chain], check=False)
+        if res.returncode != 0:
+            raise ChainError(
+                'rebase conflict while moving the chain onto the rebased branch; '
+                "resolve it, run 'git rebase --continue', then check out the "
+                "working branch and run 'git chain unfold' again")
+        _git(['checkout', branch], capture=False)
+        tip = _out(['rev-parse', chain])
     _git(['reset', '--hard', tip], capture=False)
     print(f'unfolded chain onto {branch}')
 
