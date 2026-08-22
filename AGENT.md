@@ -1,18 +1,6 @@
 # Response style
 Write your responses in ASD-STE100 simplified technical English.
 
-# Sandbox
-Bash runs sandboxed: process inspection and Apple Events are blocked.
-
-- Launch processes you must observe yourself with `run_in_background`;
-  user-launched processes are invisible to you.
-- Use `dangerouslyDisableSandbox: true` when a command needs Apple Events,
-  process inspection, or broad network — or returns empty/zero output
-  without an error. `excludedCommands` does not cover children of a
-  sandboxed parent.
-- Backslash escapes trigger a permission prompt. Quote paths with spaces
-  (`"$HOME/Library/Group Containers"`); use `-exec ... {} +` not `\;`.
-
 # Search Tools
 Use `rg` instead of `grep` and `fd` instead of `find`. Both skip hidden
 and gitignored files by default; if results look thin, retry with
