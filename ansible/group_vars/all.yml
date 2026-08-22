@@ -59,6 +59,11 @@ flatpak_apps:
   - io.gitlab.librewolf-community
   - io.mpv.Mpv
 
+# EmuDeck has no unattended mode. The playbook only downloads the AppImage to
+# ~/Applications and launches its GUI wizard once, in Desktop Mode. Opt in with
+# -e install_emudeck=true.
+install_emudeck: false
+
 optional_homebrew_formulae:
   - gh
   - node
