@@ -116,3 +116,40 @@
     - install_packages | default(true) | bool
     - install_optional | default(false) | bool
     - ansible_facts['os_family'] != 'Darwin'
+
+# EmuDeck: no unattended mode exists, so this downloads the AppImage and opens
+# its GUI wizard once. Idempotent: skipped when the AppImage is already there.
+- name: Install EmuDeck
+  when:
+    - install_emudeck | default(false) | bool
+    - ansible_facts['os_family'] != 'Darwin'
+  block:
+    - name: Create ~/Applications
+      ansible.builtin.file:
+        path: "{{ ansible_facts['user_dir'] }}/Applications"
+        state: directory
+
+    - name: Get latest EmuDeck release URL
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/EmuDeck/emudeck-electron/releases/latest
+        return_content: true
+      register: emudeck_release
+
+    - name: Set EmuDeck AppImage URL
+      ansible.builtin.set_fact:
+        emudeck_appimage_url: "{{ emudeck_release.json.assets | selectattr('name', 'search', '\\.AppImage$') | map(attribute='browser_download_url') | first }}"
+
+    - name: Download EmuDeck AppImage
+      ansible.builtin.get_url:
+        url: "{{ emudeck_appimage_url }}"
+        dest: "{{ ansible_facts['user_dir'] }}/Applications/EmuDeck.AppImage"
+        mode: "0755"
+      register: emudeck_download
+
+    - name: Launch EmuDeck installer
+      ansible.builtin.shell: "nohup {{ ansible_facts['user_dir'] }}/Applications/EmuDeck.AppImage >/dev/null 2>&1 &"
+      environment:
+        DISPLAY: ":0"
+      when:
+        - not ansible_check_mode
+        - emudeck_download is changed
