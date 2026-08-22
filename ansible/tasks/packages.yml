@@ -1,6 +1,16 @@
+# Package provisioning.
+# macOS: Homebrew in /opt/homebrew. Linux: linuxbrew in
+# /home/linuxbrew/.linuxbrew (lives in /home, so it survives SteamOS updates)
+# for CLI tools, plus Flatpak for GUI apps.
+
+- name: Set OS-specific package facts
+  ansible.builtin.set_fact:
+    brew_bin: "{{ '/opt/homebrew/bin/brew' if ansible_facts['os_family'] == 'Darwin' else '/home/linuxbrew/.linuxbrew/bin/brew' }}"
+    brew_formulae: "{{ homebrew_formulae if ansible_facts['os_family'] == 'Darwin' else linuxbrew_formulae }}"
+
 - name: Check if Homebrew is installed
   ansible.builtin.stat:
-    path: /opt/homebrew/bin/brew
+    path: "{{ brew_bin }}"
   register: homebrew_check
   when: install_packages | default(true) | bool
 
@@ -10,16 +20,24 @@
   when: (install_packages | default(true) | bool) and not homebrew_check.stat.exists
   changed_when: true
 
+# The install task above is skipped in check mode, so re-stat: the brew module
+# tasks below must not run when brew is absent (keeps CI's dry run green).
+- name: Re-check Homebrew installation
+  ansible.builtin.stat:
+    path: "{{ brew_bin }}"
+  register: homebrew_installed
+  when: install_packages | default(true) | bool
+
 - name: Update Homebrew
   community.general.homebrew:
     update_homebrew: true
   register: brew_update
   failed_when: brew_update is failed and 'Could not update' not in brew_update.msg and 'Fetching' not in brew_update.msg
-  when: install_packages | default(true) | bool
+  when: (install_packages | default(true) | bool) and homebrew_installed.stat.exists
 
 - name: Install Homebrew formulae
   community.general.homebrew:
-    name: "{{ homebrew_formulae }}"
+    name: "{{ brew_formulae }}"
     state: present
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
@@ -27,14 +45,14 @@
   until: brew_install_formulae is succeeded
   retries: 3
   delay: 5
-  when: install_packages | default(true) | bool
+  when: (install_packages | default(true) | bool) and homebrew_installed.stat.exists
 
 - name: Upgrade Homebrew formulae
-  ansible.builtin.command: /opt/homebrew/bin/brew upgrade --formula {{ homebrew_formulae | join(' ') }}
+  ansible.builtin.command: "{{ brew_bin }} upgrade --formula {{ brew_formulae | join(' ') }}"
   register: brew_upgrade_formulae
   changed_when: "'Already up-to-date' not in brew_upgrade_formulae.stdout"
   failed_when: false
-  when: install_packages | default(true) | bool
+  when: (install_packages | default(true) | bool) and homebrew_installed.stat.exists
 
 - name: Install Homebrew casks
   community.general.homebrew_cask:
@@ -46,7 +64,10 @@
   until: brew_install_casks is succeeded
   retries: 3
   delay: 5
-  when: install_packages | default(true) | bool
+  when:
+    - install_packages | default(true) | bool
+    - homebrew_installed.stat.exists
+    - ansible_facts['os_family'] == 'Darwin'
 
 - name: Install optional Homebrew formulae
   community.general.homebrew:
@@ -59,7 +80,11 @@
   until: brew_install_optional_formulae is succeeded
   retries: 3
   delay: 5
-  when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
+  when:
+    - install_packages | default(true) | bool
+    - install_optional | default(false) | bool
+    - homebrew_installed.stat.exists
+    - ansible_facts['os_family'] == 'Darwin'
 
 - name: Install optional Homebrew casks
   community.general.homebrew_cask:
@@ -71,10 +96,23 @@
   until: brew_install_optional_casks is succeeded
   retries: 3
   delay: 5
-  when: (install_packages | default(true) | bool) and (install_optional | default(false) | bool)
+  when:
+    - install_packages | default(true) | bool
+    - install_optional | default(false) | bool
+    - homebrew_installed.stat.exists
+    - ansible_facts['os_family'] == 'Darwin'
 
 - name: Remove unused Homebrew dependencies (autoremove)
-  ansible.builtin.command: /opt/homebrew/bin/brew autoremove
+  ansible.builtin.command: "{{ brew_bin }} autoremove"
   register: brew_autoremove
   changed_when: brew_autoremove.stdout != ""
-  when: install_packages | default(true) | bool
+  when: (install_packages | default(true) | bool) and homebrew_installed.stat.exists
+
+- name: Install Flatpak apps
+  community.general.flatpak:
+    name: "{{ flatpak_apps }}"
+    state: present
+  when:
+    - install_packages | default(true) | bool
+    - install_optional | default(false) | bool
+    - ansible_facts['os_family'] != 'Darwin'

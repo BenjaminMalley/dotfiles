@@ -40,6 +40,10 @@ if [ "$(uname -s)" = "Darwin" ]; then
     fi
     PYTHON_BIN="$(brew --prefix python3)/bin/python3"
 else
+    if ! command_exists python3; then
+        echo "python3 not found. Install python3 before running bootstrap." >&2
+        exit 1
+    fi
     PYTHON_BIN="python3"
 fi
 

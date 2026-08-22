@@ -1,4 +1,9 @@
-export PATH="/opt/homebrew/bin:$PATH"
+# Homebrew: /opt/homebrew on macOS, /home/linuxbrew/.linuxbrew on Linux
+for brew_bin in /opt/homebrew/bin /home/linuxbrew/.linuxbrew/bin; do
+    if [ -d "$brew_bin" ]; then
+        export PATH="$brew_bin:$PATH"
+    fi
+done
 
 # Add dotfiles scripts to PATH
 if [[ -L "$HOME/.zshrc" ]]; then

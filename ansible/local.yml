@@ -4,9 +4,8 @@
   gather_facts: true
 
   tasks:
-    - name: Ensure Homebrew packages are installed
+    - name: Ensure packages are installed
       ansible.builtin.include_tasks: tasks/packages.yml
-      when: ansible_facts['os_family'] == "Darwin"
 
     - name: Manage background services
       ansible.builtin.include_tasks: tasks/services.yml
@@ -27,8 +26,14 @@
 
     - name: Finalize configuration
       ansible.builtin.shell: |
-        gh config set prompt disabled
-        gh alias set prc '!gh pr create -f --head "$(git branch --show-current)"'
+        # brew bin dirs are not on the PATH of this process
+        export PATH="$PATH:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin"
+        if command -v gh &>/dev/null; then
+          gh config set prompt disabled
+          gh alias set prc '!gh pr create -f --head "$(git branch --show-current)"'
+        else
+          echo "gh not found; skipping gh configuration"
+        fi
         if tmux info &>/dev/null; then
           tmux set-hook -ug client-attached;
           tmux set-hook -ug pane-focus-in;

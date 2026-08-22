@@ -38,6 +38,29 @@ homebrew_casks:
   - anki
   - ghostty
 
+# Linux: CLI tools via linuxbrew (/home/linuxbrew/.linuxbrew, survives SteamOS
+# updates), GUI apps via Flatpak. These lists are intentionally independent of
+# the macOS lists above.
+linuxbrew_formulae:
+  - fd
+  - fzf
+  - gh
+  - neovim
+  - ripgrep
+  - tmux
+  - wget
+  - zsh
+
+# Flathub app IDs. Installed on Linux only, and only with install_optional=true.
+flatpak_apps:
+  - net.ankiweb.Anki
+  - com.mitchellh.ghostty
+  - io.mpv.Mpv
+  - org.videolan.VLC
+  - com.stremio.Stremio
+  - org.DolphinEmu.dolphin-emu
+  - org.libretro.RetroArch
+
 optional_homebrew_formulae:
   - gh
   - node

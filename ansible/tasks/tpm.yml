@@ -12,6 +12,8 @@
 
 - name: Install tmux plugins
   ansible.builtin.shell: |
+    # brew bin dirs are not on the PATH of this process
+    export PATH="$PATH:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin"
     tmux start-server || true
     tmux source-file {{ ansible_facts['user_dir'] }}/.tmux.conf || true
     {{ ansible_facts['user_dir'] }}/.tmux/plugins/tpm/bin/install_plugins
