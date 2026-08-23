@@ -52,7 +52,7 @@ linuxbrew_formulae:
   - wget
   - zsh
 
-# Flathub app IDs. Installed on Linux only, and only with install_optional=true.
+# Flathub app IDs. Installed on SteamOS only, and only with install_optional=true.
 flatpak_apps:
   - net.ankiweb.Anki
   - com.mitchellh.ghostty

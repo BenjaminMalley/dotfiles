@@ -115,14 +115,14 @@
   when:
     - install_packages | default(true) | bool
     - install_optional | default(false) | bool
-    - ansible_facts['os_family'] != 'Darwin'
+    - ansible_facts['distribution'] | lower is search('steamos')
 
 # EmuDeck: no unattended mode exists, so this downloads the AppImage and opens
 # its GUI wizard once. Idempotent: skipped when the AppImage is already there.
 - name: Install EmuDeck
   when:
     - install_emudeck | default(false) | bool
-    - ansible_facts['os_family'] != 'Darwin'
+    - ansible_facts['distribution'] | lower is search('steamos')
   block:
     - name: Create ~/Applications
       ansible.builtin.file:
