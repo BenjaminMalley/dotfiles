@@ -148,6 +148,7 @@
 
     - name: Launch EmuDeck installer
       ansible.builtin.shell: "nohup {{ ansible_facts['user_dir'] }}/Applications/EmuDeck.AppImage >/dev/null 2>&1 &"
+      changed_when: false
       environment:
         DISPLAY: ":0"
       when:

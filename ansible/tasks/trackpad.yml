@@ -1,0 +1,61 @@
+# Configures a USB-connected Apple Magic Trackpad as the pointing device on
+# SteamOS Desktop Mode (KDE Plasma). The in-kernel hid-magicmouse driver binds
+# the trackpad automatically when it is plugged in; this file only writes the
+# per-device libinput settings to ~/.config/kcminputrc, which Plasma applies in
+# both X11 and Wayland sessions.
+#
+# kcminputrc section names are [Libinput][<vendor>][<product>][<device name>]
+# with USB vendor/product in decimal. Apple is vendor 1452; the Lightning Magic
+# Trackpad 2 is product 613 (0x0265), the USB-C model is product 804 (0x0324).
+# Plasma applies new settings on the next login or device reconnect.
+
+- name: Detect connected Apple Magic Trackpads
+  ansible.builtin.shell: |
+    set -o pipefail
+    for name_file in /sys/bus/hid/devices/*:05AC:*/name; do
+      [ -f "$name_file" ] || continue
+      device_name=$(cat "$name_file")
+      case "$device_name" in
+        *Magic\ Trackpad*)
+          dir=$(basename "$(dirname "$name_file")")
+          vid=$(echo "$dir" | cut -d: -f2)
+          pid=$(echo "$dir" | cut -d: -f3 | cut -d. -f1)
+          echo "$((16#$vid))|$((16#$pid))|$device_name"
+          ;;
+      esac
+    done | sort -u
+  register: trackpad_devices
+  changed_when: false
+  failed_when: false
+
+- name: Build trackpad section list from detected devices
+  ansible.builtin.set_fact:
+    magic_trackpads: "{{ magic_trackpads | default([]) + [{'vendor': item.split('|')[0], 'product': item.split('|')[1], 'name': item.split('|')[2]}] }}"
+  loop: "{{ trackpad_devices.stdout_lines }}"
+
+# The trackpad is often not plugged in at provision time, so pre-write sections
+# for both known models. The device name must match what libinput reports or
+# Plasma ignores the section; once the trackpad is connected, the detection
+# task above writes an exact section that shadows these.
+- name: Use known Magic Trackpad models when none are connected
+  ansible.builtin.set_fact:
+    magic_trackpads:
+      - { vendor: "1452", product: "613", name: "Apple Inc. Magic Trackpad 2" }
+      - { vendor: "1452", product: "804", name: "Apple Inc. Magic Trackpad 2" }
+  when: magic_trackpads | default([]) | length == 0
+
+- name: Write Magic Trackpad libinput settings to kcminputrc
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_facts['user_dir'] }}/.config/kcminputrc"
+    create: true
+    mode: "0644"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK magic-trackpad-{{ item.product }}"
+    block: |
+      [Libinput][{{ item.vendor }}][{{ item.product }}][{{ item.name }}]
+      Enabled=true
+      NaturalScroll=true
+      TapToClick=true
+      TapAndDrag=true
+      TapDragLock=false
+      PointerAcceleration=0
+  loop: "{{ magic_trackpads }}"

@@ -62,6 +62,10 @@ flatpak_apps:
 # EmuDeck has no unattended mode. The playbook only downloads the AppImage to
 # ~/Applications and launches its GUI wizard once, in Desktop Mode. Opt in with
 # -e install_emudeck=true.
+# SteamOS only: write libinput settings (tap-to-click, natural scroll) for a
+# USB Apple Magic Trackpad to ~/.config/kcminputrc. See tasks/trackpad.yml.
+configure_magic_trackpad: true
+
 install_emudeck: false
 
 optional_homebrew_formulae:
