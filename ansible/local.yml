@@ -21,6 +21,12 @@
         - ansible_facts['distribution'] | lower is search('steamos')
         - configure_magic_trackpad | default(true) | bool
 
+    - name: Configure DDC/CI monitor controls
+      ansible.builtin.include_tasks: tasks/ddcci.yml
+      when:
+        - ansible_facts['distribution'] | lower is search('steamos')
+        - configure_ddcci | default(true) | bool
+
     - name: Install Dotfiles
       ansible.builtin.include_tasks: tasks/dotfiles.yml
 
