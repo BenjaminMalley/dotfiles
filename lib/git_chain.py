@@ -196,8 +196,15 @@ def cmd_fold():
         print(f"created chain branch '{chain}'")
     n = _get_frames(branch, trunk)
     total = _count(f'{trunk}..{chain}')
-    tail = total - n
     count_a = _count(f'{trunk}..{branch}')
+    if not created and n > total and count_a >= n and _is_ancestor(chain, branch):
+        # The chain shrank below the pointer (frames merged upstream, or the
+        # chain branch was reset) and holds nothing the working branch lacks.
+        # The pointer is positional, so it survives: rebuild the chain from
+        # the working branch and fold at the pointer.
+        _git(['branch', '-f', chain, branch])
+        total = count_a
+    tail = total - n
     if tail < 0 or count_a < n:
         raise ChainError(
             f'stale pointer: chain has {total} frames, working branch has {count_a}, '

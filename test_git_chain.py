@@ -167,6 +167,43 @@ class TestGitChain(unittest.TestCase):
         tip = self.rev('feature-chain')
         self.assertEqual(self.git('show', f'{tip}:f3.txt').stdout, 'f3')
 
+    def test_fold_after_entire_chain_merges_upstream(self):
+        """The whole chain merged, leaving the chain branch at trunk: the
+        pointer survives and fold rebuilds the chain from the working branch."""
+        f1, f3 = self.make_rest_state()
+
+        # Merge the whole chain into main on the remote (fast-forward).
+        self.git('push', 'origin', 'feature-chain')
+        other = os.path.join(self.test_dir, 'other')
+        subprocess.run(['git', 'clone', self.origin, other],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.git('merge', '--ff-only', 'origin/feature-chain', cwd=other)
+        self.git('push', 'origin', 'main', cwd=other)
+        self.git('fetch', 'origin')
+
+        # Rebase the folded branch onto the new trunk: every frame drops as
+        # already upstream, so the branch cannot satisfy the pointer.
+        self.git('rebase', 'origin/main')
+        self.assertEqual(self.rev('feature'), self.rev('origin/main'))
+        res = self.chain('fold', check=False)
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn('stale pointer', res.stderr)
+
+        # New work gives the branch the frames the pointer wants; fold
+        # recovers, keeping the fold at frame 1 and parking the rest.
+        f4 = self.commit_file('f4.txt', 'f4', 'f4')
+        f5 = self.commit_file('f5.txt', 'f5', 'f5')
+        self.chain('fold')
+        self.assertEqual(self.rev('feature'), f4)
+        self.assertEqual(self.rev('feature-chain'), f5)
+        self.assertEqual(self.frames('origin/main..feature'), ['f4'])
+        self.assertEqual(self.frames('feature..feature-chain'), ['f5'])
+        frames = self.git('config', '--worktree', '--get', 'chain.frames').stdout.strip()
+        self.assertEqual(frames, '1')
+        # And the cycle works again from here.
+        self.chain('unfold')
+        self.assertEqual(self.rev('feature'), f5)
+
     def test_unfold_after_rebase_onto_merge_that_rewrote_frame(self):
         """The frame merged upstream with a new SHA (squash merge) and the
         branch was rebased onto the new trunk while still folded."""
