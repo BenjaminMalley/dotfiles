@@ -66,6 +66,11 @@ flatpak_apps:
 # USB Apple Magic Trackpad to ~/.config/kcminputrc. See tasks/trackpad.yml.
 configure_magic_trackpad: true
 
+# SteamOS only: verify DDC/CI monitor control works (ddcutil and its i2c-dev
+# support ship with SteamOS 3.7+; the playbook installs nothing). See
+# tasks/ddcci.yml.
+configure_ddcci: true
+
 install_emudeck: false
 
 optional_homebrew_formulae:
