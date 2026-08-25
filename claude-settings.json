@@ -2,6 +2,7 @@
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
+      "Agent",
       "Read(**)",
       "WebFetch",
       "WebSearch",
