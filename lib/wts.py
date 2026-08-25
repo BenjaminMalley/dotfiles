@@ -1,5 +1,6 @@
 import subprocess
 import os
+import shutil
 import signal
 import sys
 import json
@@ -10,10 +11,11 @@ from lib.utils import run_command
 class WtsManager:
     """Manages git worktrees and tmux sessions."""
 
-    def __init__(self, name=None, no_worktree=False, attach=False):
+    def __init__(self, name=None, no_worktree=False, attach=False, standalone=False):
         self.name = name
         self.no_worktree = no_worktree
         self.attach = attach
+        self.standalone = standalone
         self.user = os.environ.get('USER', '').lower()
         self.repo_root = None
         self.repo_name = None
@@ -23,7 +25,8 @@ class WtsManager:
         self.session_name = None
         self.target_dir = Path.cwd()
 
-        self._detect_git()
+        if not self.standalone:
+            self._detect_git()
         self._setup_names()
 
     def _detect_git(self):
@@ -43,6 +46,13 @@ class WtsManager:
 
     def _setup_names(self):
         """Sets up session and branch names based on git state."""
+        if self.standalone:
+            self._validate_standalone_name(self.name)
+            self.session_name = self.name
+            self.branch_name = None
+            self.target_dir = Path.home() / self._SESSIONS_DIRNAME / self.name
+            return
+
         if not self.in_git:
             if not self.name:
                 self.name = os.path.basename(os.getcwd())
@@ -75,12 +85,16 @@ class WtsManager:
             self._attach()
             return
 
-        if self.in_git and not self.no_worktree:
+        if self.standalone:
+            self.target_dir.mkdir(parents=True, exist_ok=True)
+        elif self.in_git and not self.no_worktree:
             self.target_dir = Path.home() / "worktrees" / self.repo_name / self.branch_name
             run_command(['git', '-C', self.repo_root, 'rst'], check=False)
             self._ensure_worktree()
 
         created = self._ensure_tmux_session()
+        if self.standalone:
+            self._set_standalone_dir(self.session_name, self.target_dir)
         if created:
             self._save_resurrect_state()
         self._switch()
@@ -147,6 +161,14 @@ class WtsManager:
     # ------------------------------------------------------------------
     # Helpers shared between create and --add flows
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _validate_standalone_name(name):
+        """Rejects names that would escape ~/sessions or are not valid tmux session names."""
+        if not name or name in ('.', '..') or Path(name).name != name or name.startswith('-'):
+            raise ValueError(f"invalid standalone session name: {name!r}")
+        if ':' in name or '.' in name:
+            raise ValueError(f"tmux session names cannot contain ':' or '.': {name!r}")
 
     @staticmethod
     def _prefixed_branch(user, repo_name, short_name):
@@ -255,6 +277,98 @@ class WtsManager:
         WtsManager._set_added_repos(session_name, entries)
 
     # ------------------------------------------------------------------
+    # tmux option + cleanup helpers for standalone (repo-less) sessions
+    # ------------------------------------------------------------------
+
+    _STANDALONE_OPTION = '@wts-standalone'
+    _SESSIONS_DIRNAME = "sessions"
+
+    @staticmethod
+    def _get_standalone_dir(session_name):
+        """Returns the raw @wts-standalone option value for session_name, or None."""
+        res = subprocess.run(
+            ['tmux', 'show-options', '-t', f'={session_name}:', '-v', WtsManager._STANDALONE_OPTION],
+            capture_output=True, text=True,
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            return None
+        return res.stdout.strip()
+
+    @staticmethod
+    def _set_standalone_dir(session_name, path):
+        """Persists the standalone session's directory as a tmux option on session_name.
+
+        The trailing ':' is required: '=name' alone is accepted by
+        has-session/attach-session but set-option/show-options need the
+        colon to parse it as a target-session rather than fail to resolve.
+        """
+        subprocess.run(
+            ['tmux', 'set-option', '-t', f'={session_name}:', WtsManager._STANDALONE_OPTION, str(path)],
+            check=False,
+        )
+
+    @staticmethod
+    def _standalone_dir_or_none(raw):
+        """Resolves raw to a path strictly inside ~/sessions, else None.
+
+        Resolves symlinks and '..' before checking containment: a purely
+        lexical relative_to() check would accept a traversal such as
+        '~/sessions/../../etc'.
+        """
+        if not raw:
+            return None
+        root = (Path.home() / WtsManager._SESSIONS_DIRNAME).resolve()
+        try:
+            path = Path(raw).expanduser().resolve()
+        except OSError:
+            return None
+        if path == root:
+            return None
+        try:
+            path.relative_to(root)
+        except ValueError:
+            return None
+        return path
+
+    @staticmethod
+    def _standalone_dir_from_cwd():
+        """Derives the standalone session directory from the current cwd, if any.
+
+        Covers sessions restored by tmux-resurrect, which does not persist
+        tmux user options, and sessions whose shell has since cd'd into a
+        subdirectory of the session dir.
+        """
+        root = (Path.home() / WtsManager._SESSIONS_DIRNAME).resolve()
+        try:
+            cwd = Path.cwd().resolve()
+        except OSError:
+            return None
+        try:
+            rel = cwd.relative_to(root)
+        except ValueError:
+            return None
+        if not rel.parts:
+            return None
+        return root / rel.parts[0]
+
+    @staticmethod
+    def _remove_standalone_dir(path):
+        """Removes a standalone session's directory, tolerating a live editor/agent racing the delete.
+
+        Re-validates that path is inside ~/sessions even though callers are
+        expected to have resolved it via _standalone_dir_or_none already, so
+        a mistake at a call site can never delete an arbitrary directory.
+        """
+        safe_path = WtsManager._standalone_dir_or_none(str(path)) if path else None
+        if not safe_path or not safe_path.is_dir():
+            return
+        shutil.rmtree(safe_path, ignore_errors=True)
+        if safe_path.exists():
+            shutil.rmtree(safe_path, ignore_errors=True)
+        if safe_path.exists():
+            print(f"Warning: could not fully remove {safe_path}", file=sys.stderr)
+
+    # ------------------------------------------------------------------
     # --add command
     # ------------------------------------------------------------------
 
@@ -342,6 +456,21 @@ class WtsManager:
         # Read cross-repo entries before switching away (tmux option stays readable until kill)
         added = WtsManager._get_added_repos(session_name)
 
+        # Resolve the standalone session dir (if any) while cwd is still valid.
+        # Prefer the tmux option; fall back to cwd when it's unset (e.g. a
+        # session restored by tmux-resurrect, which doesn't persist options)
+        # and there's no git worktree already claiming the cleanup.
+        standalone_dir = WtsManager._standalone_dir_or_none(WtsManager._get_standalone_dir(session_name))
+        if standalone_dir is None and not should_remove_worktree:
+            standalone_dir = WtsManager._standalone_dir_from_cwd()
+
+        # cwd may be inside a directory we're about to delete; move out of it
+        # so later tmux/git subprocess calls don't inherit a dead cwd.
+        try:
+            os.chdir(Path.home())
+        except OSError:
+            pass
+
         # Switch to another session before killing this one
         other = subprocess.run(
             ['tmux', 'display-message', '-p', '#{session_id}'],
@@ -369,6 +498,8 @@ class WtsManager:
                 check=False,
             )
 
+        WtsManager._remove_standalone_dir(standalone_dir)
+
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
         subprocess.run(['tmux', 'kill-session', '-t', session_name])
         WtsManager._save_resurrect_state()
@@ -376,7 +507,8 @@ class WtsManager:
 
 # Compatibility wrappers
 def create_session(args):
-    manager = WtsManager(name=args.name, no_worktree=args.no_worktree, attach=args.attach)
+    manager = WtsManager(name=args.name, no_worktree=args.no_worktree, attach=args.attach,
+                          standalone=args.standalone)
     manager.create_session()
 
 def cleanup_session():

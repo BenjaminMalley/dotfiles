@@ -13,18 +13,24 @@ def main():
     parser = argparse.ArgumentParser(description="Manage git worktrees and tmux sessions.")
     parser.add_argument("name", nargs="?", help="Branch name or session name")
     parser.add_argument("--done", "-d", action="store_true", help="Clean up current session")
-    parser.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
+    worktree_group = parser.add_mutually_exclusive_group()
+    worktree_group.add_argument("--no-worktree", "-n", action="store_true", help="Create session without worktree")
+    worktree_group.add_argument("--standalone", "-s", action="store_true",
+                                 help="Create a session with no git repo, rooted at ~/sessions/<name>")
     parser.add_argument("--attach", "-a", action="store_true", help="Attach to session if it exists")
     parser.add_argument("--add", metavar="PATH", help="Add a worktree for another repo to the current session")
 
     args = parser.parse_args()
+
+    if args.standalone and not args.name:
+        parser.error("--standalone requires a session name")
 
     try:
         if args.done:
             cleanup_session()
         elif args.add:
             add_repo(args)
-        elif not args.name and not args.no_worktree and not args.attach:
+        elif not args.name and not args.no_worktree and not args.attach and not args.standalone:
             parser.print_help()
             sys.exit(1)
         else:
