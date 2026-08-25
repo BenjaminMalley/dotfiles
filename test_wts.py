@@ -413,6 +413,139 @@ class TestWtsIntegration(unittest.TestCase):
             self.assertIn(f"new-session -d -s {expected_session_name}", content)
             self.assertIn(f"-c {self.test_dir}", content)
 
+    def test_wts_standalone_create(self):
+        """Tests wts -s creates ~/sessions/<name> and ignores git even when invoked inside a repo."""
+        session_name = "goalie-123"
+
+        fake_tmux_dir = os.path.join(self.test_dir, 'bin')
+        os.makedirs(fake_tmux_dir, exist_ok=True)
+        fake_tmux = os.path.join(fake_tmux_dir, 'tmux')
+        tmux_log = os.path.join(self.test_dir, 'tmux_standalone.log')
+        with open(fake_tmux, 'w') as f:
+            f.write(f'#!/bin/sh\necho "fake tmux called with: $@" >> {tmux_log}\n')
+            f.write('if echo "$@" | grep -q "has-session"; then\n  exit 1\nfi\n')
+            f.write('exit 0\n')
+        os.chmod(fake_tmux, 0o755)
+
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+        env['PATH'] = fake_tmux_dir + os.pathsep + env['PATH']
+        env['WTS_AGENT_CMD'] = 'test-agent'
+
+        res = subprocess.run([sys.executable, WTS_SCRIPT, '-s', session_name],
+                              cwd=self.test_dir, env=env, capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"wts -s failed: {res.stderr}")
+
+        expected_dir = os.path.join(self.test_dir, 'sessions', session_name)
+        self.assertTrue(os.path.exists(expected_dir), "standalone session dir should be created")
+
+        repo_name = os.path.basename(self.test_dir)
+        unexpected_worktree = os.path.join(self.test_dir, 'worktrees', repo_name, session_name)
+        self.assertFalse(os.path.exists(unexpected_worktree), "standalone mode must not create a worktree")
+
+        with open(tmux_log, 'r') as f:
+            content = f.read()
+        self.assertIn(f"new-session -d -s {session_name}", content)
+        self.assertIn(f"-c {expected_dir}", content)
+        self.assertIn("rename-window", content)
+        self.assertIn("split-window", content)
+        self.assertIn("vim .", content)
+        self.assertIn("test-agent", content)
+        self.assertIn(f"set-option -t ={session_name}: @wts-standalone {expected_dir}", content)
+
+        branches = subprocess.run(['git', 'branch', '--list', f'*{session_name}*'],
+                                   cwd=self.test_dir, capture_output=True, text=True).stdout
+        self.assertEqual(branches.strip(), "", "standalone mode must not create a git branch")
+
+    def test_wts_standalone_requires_name(self):
+        """Tests that 'wts -s' with no name fails instead of silently doing nothing."""
+        res = subprocess.run([sys.executable, WTS_SCRIPT, '-s'], cwd=self.test_dir,
+                              capture_output=True, text=True)
+        self.assertNotEqual(res.returncode, 0, "wts -s with no name should fail")
+
+    def test_wts_standalone_rejects_no_worktree_combo(self):
+        """Tests that -s and -n together are rejected as contradictory."""
+        res = subprocess.run([sys.executable, WTS_SCRIPT, '-s', 'foo', '-n'], cwd=self.test_dir,
+                              capture_output=True, text=True)
+        self.assertNotEqual(res.returncode, 0, "-s and -n together should be rejected")
+
+    def test_wts_standalone_rejects_traversal(self):
+        """A standalone name containing '..' must not create a directory outside ~/sessions."""
+        env = os.environ.copy()
+        env['HOME'] = self.test_dir
+
+        res = subprocess.run([sys.executable, WTS_SCRIPT, '-s', '../escape'], cwd=self.test_dir,
+                              env=env, capture_output=True, text=True)
+        self.assertNotEqual(res.returncode, 0, "a name containing '..' should be rejected")
+
+        escaped = os.path.abspath(os.path.join(self.test_dir, '..', 'escape'))
+        self.assertFalse(os.path.exists(escaped), "no directory should be created outside ~/sessions")
+
+    def test_wts_standalone_done_deletes_dir(self):
+        """Tests that wts -d removes a standalone session's ~/sessions/<name> directory."""
+        session_dir = os.path.join(self.test_dir, 'sessions', 'oncall')
+        os.makedirs(session_dir, exist_ok=True)
+        with open(os.path.join(session_dir, 'notes.md'), 'w') as f:
+            f.write('sentinel')
+
+        self.run_tmux('new-session', '-d', '-s', 'oncall-session', '-c', session_dir, check=True)
+        self.run_tmux('set-option', '-t', '=oncall-session:', '@wts-standalone', session_dir, check=True)
+
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
+        self.run_tmux('send-keys', '-t', 'oncall-session', cmd_str, 'Enter', check=True)
+
+        max_retries = 20
+        for _ in range(max_retries):
+            ret = self.run_tmux('has-session', '-t', 'oncall-session', stderr=subprocess.DEVNULL)
+            if ret.returncode != 0:
+                break
+            time.sleep(0.5)
+        self.assertNotEqual(ret.returncode, 0, "session should have been killed")
+        self.assertFalse(os.path.exists(session_dir), "standalone session dir should be removed")
+
+    def test_wts_standalone_done_without_marker_falls_back_to_cwd(self):
+        """Simulates a tmux-resurrect-restored session, which loses the @wts-standalone option."""
+        session_dir = os.path.join(self.test_dir, 'sessions', 'restored')
+        os.makedirs(session_dir, exist_ok=True)
+
+        self.run_tmux('new-session', '-d', '-s', 'restored-session', '-c', session_dir, check=True)
+        # Intentionally no @wts-standalone option set here.
+
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
+        self.run_tmux('send-keys', '-t', 'restored-session', cmd_str, 'Enter', check=True)
+
+        max_retries = 20
+        for _ in range(max_retries):
+            ret = self.run_tmux('has-session', '-t', 'restored-session', stderr=subprocess.DEVNULL)
+            if ret.returncode != 0:
+                break
+            time.sleep(0.5)
+        self.assertNotEqual(ret.returncode, 0, "session should have been killed")
+        self.assertFalse(os.path.exists(session_dir), "cwd fallback should still remove the dir")
+
+    def test_wts_done_repo_session_spares_stale_sessions_dir(self):
+        """A repo session named like a stale ~/sessions/<name> dir must not delete it."""
+        stale_dir = os.path.join(self.test_dir, 'sessions', 'feature-branch')
+        os.makedirs(stale_dir, exist_ok=True)
+        sentinel = os.path.join(stale_dir, 'sentinel.txt')
+        with open(sentinel, 'w') as f:
+            f.write('keep me')
+
+        self.run_tmux('new-session', '-d', '-s', 'feature-branch', '-c', self.worktree_path, check=True)
+
+        cmd_str = f"export HOME='{self.test_dir}'; '{sys.executable}' '{WTS_SCRIPT}' --done"
+        self.run_tmux('send-keys', '-t', 'feature-branch', cmd_str, 'Enter', check=True)
+
+        max_retries = 20
+        for _ in range(max_retries):
+            ret = self.run_tmux('has-session', '-t', 'feature-branch', stderr=subprocess.DEVNULL)
+            if ret.returncode != 0:
+                break
+            time.sleep(0.5)
+        self.assertNotEqual(ret.returncode, 0, "session should have been killed")
+        self.assertFalse(os.path.exists(self.worktree_path), "worktree should be removed")
+        self.assertTrue(os.path.exists(sentinel), "unrelated stale ~/sessions dir must survive")
+
     def test_wts_attach(self):
         """Tests 'wts --attach'."""
         # Create a fake tmux script
@@ -610,6 +743,70 @@ class TestWtsIntegration(unittest.TestCase):
             os.path.exists(sentinel),
             "resurrect save must not be triggered when the session already existed",
         )
+
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from lib.wts import WtsManager  # noqa: E402
+
+
+class TestStandaloneDirGuard(unittest.TestCase):
+    """Unit tests for the ~/sessions containment guard, isolated from tmux/git."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.home_patch = patch.dict(os.environ, {'HOME': self.tmp})
+        self.home_patch.start()
+        os.makedirs(os.path.join(self.tmp, 'sessions'))
+
+    def tearDown(self):
+        self.home_patch.stop()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_allows_path_under_sessions(self):
+        target = os.path.join(self.tmp, 'sessions', 'foo')
+        os.makedirs(target)
+        self.assertEqual(WtsManager._standalone_dir_or_none(target), Path(target).resolve())
+
+    def test_refuses_path_outside_sessions(self):
+        self.assertIsNone(WtsManager._standalone_dir_or_none('/etc'))
+        self.assertIsNone(WtsManager._standalone_dir_or_none(self.tmp))
+
+    def test_refuses_sessions_root_itself(self):
+        self.assertIsNone(WtsManager._standalone_dir_or_none(os.path.join(self.tmp, 'sessions')))
+
+    def test_refuses_traversal_out_of_sessions(self):
+        """A naive lexical relative_to() check would accept this; resolve() must close it."""
+        traversal = os.path.join(self.tmp, 'sessions', '..', '..', 'etc')
+        self.assertIsNone(WtsManager._standalone_dir_or_none(traversal))
+
+    def test_refuses_symlink_escaping_sessions(self):
+        outside = os.path.join(self.tmp, 'outside')
+        os.makedirs(outside)
+        link = os.path.join(self.tmp, 'sessions', 'link')
+        os.symlink(outside, link)
+        self.assertIsNone(WtsManager._standalone_dir_or_none(link))
+
+    def test_refuses_empty_and_none(self):
+        self.assertIsNone(WtsManager._standalone_dir_or_none(''))
+        self.assertIsNone(WtsManager._standalone_dir_or_none(None))
+
+    def test_remove_standalone_dir_refuses_outside(self):
+        """_remove_standalone_dir must re-validate, not just trust its caller."""
+        with patch('shutil.rmtree') as mock_rmtree:
+            WtsManager._remove_standalone_dir(Path('/etc'))
+            mock_rmtree.assert_not_called()
+
+    def test_cwd_fallback_derives_root_segment(self):
+        nested = os.path.join(self.tmp, 'sessions', 'foo', 'notes')
+        os.makedirs(nested)
+        with patch('os.getcwd', return_value=nested):
+            result = WtsManager._standalone_dir_from_cwd()
+        self.assertEqual(result, Path(self.tmp, 'sessions', 'foo').resolve())
+
+    def test_cwd_fallback_none_outside_sessions(self):
+        with patch('os.getcwd', return_value=self.tmp):
+            self.assertIsNone(WtsManager._standalone_dir_from_cwd())
+
 
 if __name__ == '__main__':
     # Verify dependencies

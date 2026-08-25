@@ -78,7 +78,8 @@ Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`*
 ### Usage
 - `wts <branch-name>`: Create (or switch to) a worktree and tmux session for the specified branch.
 - `wts -n <session-name>`: Create a tmux session without creating a git worktree.
-- `wts -d`: (Done) Clean up the current session—removes the worktree (if it's in `~/worktrees`) and kills the tmux session.
+- `wts -s <session-name>`: Create a standalone session with no git repo at all, rooted at `~/sessions/<session-name>`. Use this for work that isn't tied to a repo, such as goalie/on-call issues or program-management docs.
+- `wts -d`: (Done) Clean up the current session—removes the worktree (if it's in `~/worktrees`) or the standalone directory (if it's in `~/sessions`), and kills the tmux session.
 - `wts -a <session-name>`: Attach to an existing tmux session.
 
 ### Configuration
