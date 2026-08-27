@@ -1,9 +1,13 @@
-# Homebrew: /opt/homebrew on macOS, /home/linuxbrew/.linuxbrew on Linux
-for brew_bin in /opt/homebrew/bin /home/linuxbrew/.linuxbrew/bin; do
-    if [ -d "$brew_bin" ]; then
-        export PATH="$brew_bin:$PATH"
-    fi
-done
+# Homebrew on macOS: PATH only, brew works fine without the rest of shellenv
+if [ -d /opt/homebrew/bin ]; then
+    export PATH="/opt/homebrew/bin:$PATH"
+fi
+
+# linuxbrew needs the full shellenv (MANPATH, INFOPATH, HOMEBREW_* vars), not
+# just PATH
+if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
 
 # Add dotfiles scripts to PATH
 if [[ -L "$HOME/.zshrc" ]]; then
