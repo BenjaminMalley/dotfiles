@@ -69,12 +69,21 @@ def handle_claude_stop(payload_str):
     return "{}"
 
 
+NOTIFIABLE_TYPES = {'permission_prompt', 'elicitation_dialog'}
+
+
 def handle_claude_notification(payload_str):
-    """Handles Claude Notification — refreshes editor and sends desktop notification."""
+    """Handles Claude Notification — refreshes editor and sends desktop notification.
+
+    The hooks config can't use a "matcher" on the Notification event: this
+    Claude Code build silently skips any Notification hook block that has
+    one, so filtering by notification_type happens here instead."""
     if not payload_str:
         return "{}"
     try:
         data = json.loads(payload_str)
+        if data.get('notification_type') not in NOTIFIABLE_TYPES:
+            return "{}"
         cwd = data.get('cwd', '')
         project_name = os.path.basename(cwd) if cwd else 'Claude'
         run_local_script('peek')

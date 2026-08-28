@@ -37,10 +37,25 @@ class TestHooks(unittest.TestCase):
     @patch('lib.hooks.run_local_script')
     @patch('lib.hooks.send_notification')
     def test_claude_hook_notification_event(self, mock_notify, mock_run_script):
-        payload = {"cwd": "/path/to/claude-project"}
+        payload = {"cwd": "/path/to/claude-project", "notification_type": "permission_prompt"}
         handle_claude_notification(json.dumps(payload))
         mock_run_script.assert_called_with('peek')
         mock_notify.assert_called_with("Input Required", "Claude (claude-project)")
+
+    @patch('lib.hooks.run_local_script')
+    @patch('lib.hooks.send_notification')
+    def test_claude_hook_notification_event_elicitation(self, mock_notify, mock_run_script):
+        payload = {"cwd": "/path/to/claude-project", "notification_type": "elicitation_dialog"}
+        handle_claude_notification(json.dumps(payload))
+        mock_notify.assert_called_with("Input Required", "Claude (claude-project)")
+
+    @patch('lib.hooks.run_local_script')
+    @patch('lib.hooks.send_notification')
+    def test_claude_hook_notification_event_ignores_other_types(self, mock_notify, mock_run_script):
+        payload = {"cwd": "/path/to/claude-project", "notification_type": "idle_prompt"}
+        handle_claude_notification(json.dumps(payload))
+        mock_run_script.assert_not_called()
+        mock_notify.assert_not_called()
 
     @patch('lib.hooks.run_local_script')
     def test_claude_hook_write_tool(self, mock_run_script):
