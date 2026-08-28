@@ -41,11 +41,11 @@
       "Bash(defaults read*)",
       "Bash(plutil -p*)",
       "Bash(curl:*)",
-      "Bash(sudo pfctl -s *)"
+      "Bash(sudo pfctl -s *)",
+      "Bash(git push)",
+      "Bash(git push *)"
     ],
     "ask": [
-      "Bash(git push)",
-      "Bash(git push *)",
       "Bash(git push-base)",
       "Bash(git push-base *)",
       "Bash(git reset --hard *)",
