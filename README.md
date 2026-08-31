@@ -1,6 +1,6 @@
 # Dotfiles
 
-Personal configuration files for macOS and Linux (including SteamOS).
+Personal configuration files for macOS.
 
 ## Installation
 
@@ -8,18 +8,9 @@ Personal configuration files for macOS and Linux (including SteamOS).
 ./bootstrap.sh
 ```
 
-This will symlink the dotfiles and set up configurations. On macOS it installs
-Homebrew packages; on Linux it installs CLI tools via linuxbrew and GUI apps via
-Flatpak. Package lists live in `ansible/group_vars/all.yml` and are separate per
-OS.
+This will symlink the dotfiles and set up configurations, including installing
+Homebrew packages. The package list lives in `ansible/group_vars/all.yml`.
 ** Note: The script assumes a working `python3` **
-
-### SteamOS notes
-
-- Set a user password first (`passwd`) — the linuxbrew installer needs sudo once.
-- Linuxbrew installs zsh but cannot set it as the login shell (the root
-  filesystem is read-only); add `exec /home/linuxbrew/.linuxbrew/bin/zsh` to
-  `~/.bashrc` to start it from bash.
 
 ## Neovim Cheatsheet
 

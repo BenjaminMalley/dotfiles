@@ -15,18 +15,6 @@
       ansible.builtin.include_tasks: tasks/macos.yml
       when: ansible_facts['os_family'] == "Darwin"
 
-    - name: Configure Magic Trackpad
-      ansible.builtin.include_tasks: tasks/trackpad.yml
-      when:
-        - ansible_facts['distribution'] | lower is search('steamos')
-        - configure_magic_trackpad | default(true) | bool
-
-    - name: Configure DDC/CI monitor controls
-      ansible.builtin.include_tasks: tasks/ddcci.yml
-      when:
-        - ansible_facts['distribution'] | lower is search('steamos')
-        - configure_ddcci | default(true) | bool
-
     - name: Install Dotfiles
       ansible.builtin.include_tasks: tasks/dotfiles.yml
 
@@ -39,7 +27,7 @@
     - name: Finalize configuration
       ansible.builtin.shell: |
         # brew bin dirs are not on the PATH of this process
-        export PATH="$PATH:/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin"
+        export PATH="$PATH:/opt/homebrew/bin"
         if command -v gh &>/dev/null; then
           gh config set prompt disabled
           gh alias set prc '!gh pr create -f --head "$(git branch --show-current)"'

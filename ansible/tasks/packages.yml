@@ -1,12 +1,10 @@
 # Package provisioning.
-# macOS: Homebrew in /opt/homebrew. Linux: linuxbrew in
-# /home/linuxbrew/.linuxbrew (lives in /home, so it survives SteamOS updates)
-# for CLI tools, plus Flatpak for GUI apps.
+# macOS: Homebrew in /opt/homebrew.
 
 - name: Set OS-specific package facts
   ansible.builtin.set_fact:
-    brew_bin: "{{ '/opt/homebrew/bin/brew' if ansible_facts['os_family'] == 'Darwin' else '/home/linuxbrew/.linuxbrew/bin/brew' }}"
-    brew_formulae: "{{ homebrew_formulae if ansible_facts['os_family'] == 'Darwin' else linuxbrew_formulae }}"
+    brew_bin: "/opt/homebrew/bin/brew"
+    brew_formulae: "{{ homebrew_formulae }}"
 
 - name: Check if Homebrew is installed
   ansible.builtin.stat:
@@ -14,27 +12,9 @@
   register: homebrew_check
   when: install_packages | default(true) | bool
 
-# On Linux, install.sh creates /home/linuxbrew itself via sudo, which needs
-# an interactive password prompt; running the whole install as root instead
-# makes install.sh abort ("Don't run this as root!"). So pre-create the
-# directory here, as root, one time, and let install.sh run unprivileged
-# below: it only sudos for paths it does not already own.
-- name: Pre-create the linuxbrew directory
-  become: true
-  ansible.builtin.file:
-    path: /home/linuxbrew/.linuxbrew
-    state: directory
-    owner: "{{ ansible_facts['user_id'] }}"
-    group: "{{ ansible_facts['user_gid'] }}"
-    mode: "0755"
-  when:
-    - install_packages | default(true) | bool
-    - ansible_facts['os_family'] != 'Darwin'
-    - not homebrew_check.stat.exists
-
 # install.sh prints a "Next steps" message telling you to add the brew
 # shellenv eval to .bashrc. Ignore that: this repo does not manage .bashrc,
-# and zshrc already has the Linux eval for the .zshrc it symlinks in.
+# and zshrc already has the eval for the .zshrc it symlinks in.
 - name: Install Homebrew
   ansible.builtin.shell: |
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -128,50 +108,3 @@
   register: brew_autoremove
   changed_when: brew_autoremove.stdout != ""
   when: (install_packages | default(true) | bool) and homebrew_installed.stat.exists
-
-- name: Install Flatpak apps
-  community.general.flatpak:
-    name: "{{ flatpak_apps }}"
-    state: present
-  when:
-    - install_packages | default(true) | bool
-    - install_optional | default(false) | bool
-    - ansible_facts['distribution'] | lower is search('steamos')
-
-# EmuDeck: no unattended mode exists, so this downloads the AppImage and opens
-# its GUI wizard once. Idempotent: skipped when the AppImage is already there.
-- name: Install EmuDeck
-  when:
-    - install_emudeck | default(false) | bool
-    - ansible_facts['distribution'] | lower is search('steamos')
-  block:
-    - name: Create ~/Applications
-      ansible.builtin.file:
-        path: "{{ ansible_facts['user_dir'] }}/Applications"
-        state: directory
-
-    - name: Get latest EmuDeck release URL
-      ansible.builtin.uri:
-        url: https://api.github.com/repos/EmuDeck/emudeck-electron/releases/latest
-        return_content: true
-      register: emudeck_release
-
-    - name: Set EmuDeck AppImage URL
-      ansible.builtin.set_fact:
-        emudeck_appimage_url: "{{ emudeck_release.json.assets | selectattr('name', 'search', '\\.AppImage$') | map(attribute='browser_download_url') | first }}"
-
-    - name: Download EmuDeck AppImage
-      ansible.builtin.get_url:
-        url: "{{ emudeck_appimage_url }}"
-        dest: "{{ ansible_facts['user_dir'] }}/Applications/EmuDeck.AppImage"
-        mode: "0755"
-      register: emudeck_download
-
-    - name: Launch EmuDeck installer
-      ansible.builtin.shell: "nohup {{ ansible_facts['user_dir'] }}/Applications/EmuDeck.AppImage >/dev/null 2>&1 &"
-      changed_when: false
-      environment:
-        DISPLAY: ":0"
-      when:
-        - not ansible_check_mode
-        - emudeck_download is changed
