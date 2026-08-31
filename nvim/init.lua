@@ -4,6 +4,9 @@ vim.cmd('source ~/.vimrc')
 -- Faster completion and diagnostic feedback
 vim.opt.updatetime = 300
 
+-- No swap files: crash recovery is not worth the stale-lock prompts.
+vim.opt.swapfile = false
+
 -- Reload externally-changed buffers on :checktime without prompting (peek
 -- sends checktime explicitly; unmodified buffers reload silently).
 -- Already set via the sourced ~/.vimrc; stated here for intent.
