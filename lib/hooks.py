@@ -69,25 +69,43 @@ def handle_claude_stop(payload_str):
     return "{}"
 
 
-NOTIFIABLE_TYPES = {'permission_prompt', 'elicitation_dialog'}
+NOTIFIABLE_TYPES = {
+    'permission_prompt',
+    'elicitation_dialog',
+    'elicitation_url_dialog',
+    'idle_prompt',
+    'agent_needs_input',
+    'agent_completed',
+}
+
+NOTIFICATION_TITLES = {
+    'permission_prompt': 'Input Required',
+    'elicitation_dialog': 'Input Required',
+    'elicitation_url_dialog': 'Input Required',
+    'idle_prompt': 'Waiting For You',
+    'agent_needs_input': 'Agent Needs Input',
+    'agent_completed': 'Agent Finished',
+}
 
 
 def handle_claude_notification(payload_str):
     """Handles Claude Notification — refreshes editor and sends desktop notification.
 
-    The hooks config can't use a "matcher" on the Notification event: this
-    Claude Code build silently skips any Notification hook block that has
-    one, so filtering by notification_type happens here instead."""
+    code.claude.com/docs/en/hooks.md lists a fixed set of notification_type
+    values (see NOTIFIABLE_TYPES); permission_prompt/elicitation_dialog alone
+    miss idle waits and subagent/fork events, so we filter to a wider set."""
     if not payload_str:
         return "{}"
     try:
         data = json.loads(payload_str)
-        if data.get('notification_type') not in NOTIFIABLE_TYPES:
+        notification_type = data.get('notification_type')
+        if notification_type not in NOTIFIABLE_TYPES:
             return "{}"
         cwd = data.get('cwd', '')
         project_name = os.path.basename(cwd) if cwd else 'Claude'
+        title = NOTIFICATION_TITLES.get(notification_type, 'Input Required')
         run_local_script('peek')
-        send_notification("Input Required", f"Claude ({project_name})")
+        send_notification(title, f"Claude ({project_name})")
     except Exception as e:
         sys.stderr.write(f"Error processing Claude notification payload: {e}\n")
     return "{}"
