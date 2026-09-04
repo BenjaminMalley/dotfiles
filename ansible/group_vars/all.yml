@@ -28,6 +28,7 @@ homebrew_formulae:
   - container
   - fd
   - fzf
+  - glow
   - jdtls
   - neovim
   - ripgrep
