@@ -52,6 +52,7 @@
     - { domain: 'NSGlobalDomain', key: 'AppleShowAllExtensions', type: 'bool', value: true }
     - { domain: 'com.apple.finder', key: 'ShowStatusBar', type: 'bool', value: true }
     - { domain: 'com.apple.finder', key: 'ShowPathbar', type: 'bool', value: true }
+    - { domain: 'com.apple.finder', key: 'FXPreferredViewStyle', type: 'string', value: 'Nlsv' }
     - { domain: 'NSGlobalDomain', key: 'com.apple.sound.beep.feedback', type: 'int', value: 0 }
     - { domain: 'NSGlobalDomain', key: 'com.apple.sound.beep.volume', type: 'float', value: 0 }
     - { domain: 'com.apple.Terminal', key: 'VisualBell', type: 'bool', value: false }
