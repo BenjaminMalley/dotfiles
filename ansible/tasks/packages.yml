@@ -72,7 +72,7 @@
 
 - name: Install optional Homebrew formulae
   community.general.homebrew:
-    name: "{{ optional_homebrew_formulae }}"
+    name: "{{ optional_homebrew_formulae | intersect(optional_selection | default(optional_homebrew_formulae)) }}"
     state: present
     upgrade: true
   environment:
@@ -83,13 +83,13 @@
   delay: 5
   when:
     - install_packages | default(true) | bool
-    - install_optional | default(false) | bool
+    - install_optional | default(false) | bool or optional_selection is defined
     - homebrew_installed.stat.exists
     - ansible_facts['os_family'] == 'Darwin'
 
 - name: Install optional Homebrew casks
   community.general.homebrew_cask:
-    name: "{{ optional_homebrew_casks }}"
+    name: "{{ optional_homebrew_casks | intersect(optional_selection | default(optional_homebrew_casks)) }}"
     state: present
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
@@ -99,7 +99,7 @@
   delay: 5
   when:
     - install_packages | default(true) | bool
-    - install_optional | default(false) | bool
+    - install_optional | default(false) | bool or optional_selection is defined
     - homebrew_installed.stat.exists
     - ansible_facts['os_family'] == 'Darwin'
 
