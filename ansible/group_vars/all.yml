@@ -39,6 +39,7 @@ homebrew_casks:
   - alt-tab
   - anki
   - ghostty
+  - netnewswire
 
 optional_homebrew_formulae:
   - gh
