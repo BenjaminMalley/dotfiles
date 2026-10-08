@@ -7,12 +7,18 @@ and gitignored files by default; if results look thin, retry with
 `--hidden --no-ignore`.
 
 # Comments
-Default: no comments. Prove behavior with a test case, not a comment — a
-test is checked; a comment is not.
+Do not write code comments. This rule has no exception.
 
-The only exception: a non-obvious fact that no test can capture (a hidden
-constraint, a workaround, a subtle invariant). Keep it to one line. Never
-write a comment that restates what the code does.
+Do not write a comment for any reason. Do not write a comment to explain
+a hidden constraint. Do not write a comment to explain a workaround. Do
+not write a comment to explain an invariant. Do not write a docstring.
+Do not write a TODO. Do not write a one-line comment.
+
+Prove behavior with a test case. A test is checked. A comment is not
+checked.
+
+If you think a case needs a comment, do not write the comment. Write a
+test instead, or say the fact to the user in your response.
 
 # Editor Navigation
 `peek` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to
