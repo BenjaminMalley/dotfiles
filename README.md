@@ -81,7 +81,6 @@ Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`*
 - **zsh**: Configured in `.zshrc`
 - **tmux**: Configured in `.tmux.conf`
 - **Vim/Neovim**: Configured in `.vimrc` and `nvim/`
-- **Ghostty**: Configured in `ghostty/config`
 - **Scripts**: Located in `scripts/` (`dotfiles`, `git-chain`, `gh-create`)
 
 ## Git Shortcuts

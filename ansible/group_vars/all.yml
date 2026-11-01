@@ -5,7 +5,6 @@ dotfiles:
   - { source: "tmux.conf", dest: ".tmux.conf" }
   - { source: "vimrc", dest: ".vimrc" }
   - { source: "nvim", dest: ".config/nvim" }
-  - { source: "ghostty/config", dest: ".config/ghostty/config" }
   - { source: "editorconfig", dest: ".editorconfig" }
 
 macos_services_to_restart:
