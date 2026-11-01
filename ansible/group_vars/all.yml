@@ -29,6 +29,7 @@ homebrew_formulae:
 
 homebrew_casks:
   - anki
+  - claude
   - netnewswire
 
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]

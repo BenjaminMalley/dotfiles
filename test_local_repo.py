@@ -82,7 +82,9 @@ class TestLocalRepoSupplements(unittest.TestCase):
         self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "agent-instructions.md"))
         self.assertFalse(os.path.lexists(self._home(".claude/CLAUDE.md")))
         with open(self._home("brew.json")) as f:
-            self.assertIn("gh", json.load(f)["formulae"])
+            brew = json.load(f)
+        self.assertIn("gh", brew["formulae"])
+        self.assertIn("claude", brew["casks"])
 
     def test_local_files_supplement_core(self):
         os.makedirs(os.path.join(self.local_dir, ".git"))
