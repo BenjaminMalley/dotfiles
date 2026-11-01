@@ -58,6 +58,7 @@
   community.general.homebrew_cask:
     name: "{{ brew_casks }}"
     state: present
+    install_options: force
   environment:
     HOMEBREW_NO_AUTO_UPDATE: "1"
   register: brew_install_casks
