@@ -1,29 +1,17 @@
-- name: Locate the core and local repos
+- name: Locate the core repo
   ansible.builtin.set_fact:
     core_repo: "{{ (playbook_dir + '/..') | realpath }}"
-    local_repo: "{{ (playbook_dir + '/../..') | realpath }}"
 
-- name: Check that the local repo holds this repo as a submodule
-  ansible.builtin.stat:
-    path: "{{ local_repo }}/.gitmodules"
-  register: local_gitmodules
-
-- name: Require a local repo
-  ansible.builtin.assert:
-    that: local_gitmodules.stat.exists
-    fail_msg: "Run bootstrap.sh from a local repo that holds this repo as a submodule at ./dotfiles. {{ local_repo }} has no .gitmodules."
-    quiet: true
-
-- name: Check for local.yml
-  ansible.builtin.stat:
-    path: "{{ local_repo }}/local.yml"
-  register: local_vars_file
+- name: Locate the local repo
+  ansible.builtin.set_fact:
+    local_repo: "{{ core_repo | dirname }}"
+  when: (core_repo | dirname + '/.git') is exists
 
 - name: Load local.yml
   ansible.builtin.include_vars:
     file: "{{ local_repo }}/local.yml"
     name: local_vars
-  when: local_vars_file.stat.exists
+  when: local_repo is defined and (local_repo + '/local.yml') is file
 
 - name: Append local supplements to core lists
   ansible.builtin.set_fact:
