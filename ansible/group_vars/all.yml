@@ -29,9 +29,7 @@ homebrew_formulae:
   - wget
 
 homebrew_casks:
-  - alt-tab
   - anki
-  - ghostty
   - netnewswire
 
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]
