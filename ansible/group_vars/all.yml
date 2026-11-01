@@ -33,9 +33,11 @@ homebrew_casks:
   - netnewswire
 
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]
+terminal_opaque_profiles: ["Clear Dark"]
 terminal_settings:
   - { key: "shellExitAction", type: "integer", value: "1" }
-  - { key: "BackgroundSettingsForInactiveWindows", type: "bool", value: "false" }
+  - { key: "BackgroundAlphaInactive", type: "real", value: "0.5" }
+  - { key: "BackgroundSettingsForInactiveWindows", type: "bool", value: "true" }
 
 managed_login_items:
   - { type: "TeamIdentifier", value: "MXGJJ98X76", comment: "Steam", disposition: "Disallowed" }

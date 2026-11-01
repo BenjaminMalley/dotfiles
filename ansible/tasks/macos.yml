@@ -57,6 +57,8 @@
     - { domain: 'NSGlobalDomain', key: 'com.apple.sound.beep.volume', type: 'float', value: 0 }
     - { domain: 'com.apple.Terminal', key: 'VisualBell', type: 'bool', value: false }
     - { domain: 'com.apple.Terminal', key: 'AudibleBell', type: 'bool', value: false }
+    - { domain: 'com.apple.Terminal', key: 'Default Window Settings', type: 'string', value: 'Clear Dark' }
+    - { domain: 'com.apple.Terminal', key: 'Startup Window Settings', type: 'string', value: 'Clear Dark' }
     - { domain: 'NSGlobalDomain', key: 'AppleInterfaceStyle', type: 'string', value: 'Dark' }
     - { domain: 'NSGlobalDomain', key: 'AppleICUForce24HourTime', type: 'bool', value: true }
     - { domain: 'com.apple.menuextra.clock', key: 'DateFormat', type: 'string', value: 'EEE d MMM HH:mm:ss' }
@@ -196,7 +198,7 @@
 
 - name: Make Terminal profile backgrounds opaque
   ansible.builtin.command:
-    argv: "{{ ['python3', playbook_dir + '/../lib/terminal_profiles.py'] + terminal_profiles }}"
+    argv: "{{ ['python3', playbook_dir + '/../lib/terminal_profiles.py'] + terminal_opaque_profiles }}"
   register: terminal_opaque
   changed_when: "'RESULT=CHANGED' in terminal_opaque.stdout"
 
