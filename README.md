@@ -35,10 +35,12 @@ same kind:
 | Local file | Effect |
 | --- | --- |
 | `local.yml` | `homebrew_formulae`, `homebrew_casks` and `dotfiles` lists are appended to the core lists in `ansible/group_vars/all.yml`. `dotfiles` sources are relative to the local repo. |
-| `AGENTS.md` | Linked to `~/.claude/CLAUDE.md`. The core `AGENTS.md` is linked to `~/.claude/rules/core.md`, so Claude Code loads both. |
+| `agent-instructions.md` | Linked to `~/.claude/CLAUDE.md`. The core `agent-instructions.md` is linked to `~/.claude/rules/core.md`, so Claude Code loads both. |
 | `claude-settings.json` | Merged into the core `claude-settings.json` to make `~/.claude/settings.json`. Lists are appended. |
 | `zshrc` | Sourced by the core `zshrc`. |
 | `scripts/` | Added to `PATH` after the core `scripts/`. |
+
+The instruction files are not named `AGENTS.md` or `CLAUDE.md`. Agents load files with those names as project instructions, so a session in either repo would load them twice.
 
 Example `local.yml`:
 

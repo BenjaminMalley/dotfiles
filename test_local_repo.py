@@ -20,7 +20,7 @@ class TestLocalRepoSupplements(unittest.TestCase):
         self.home_dir = os.path.join(self.tmp_dir, "home")
         os.makedirs(self.home_dir)
         shutil.copytree(os.path.join(REPO_ROOT, "ansible"), os.path.join(self.core_dir, "ansible"))
-        for name in ["AGENTS.md", "claude-settings.json"]:
+        for name in ["agent-instructions.md", "claude-settings.json"]:
             shutil.copy(os.path.join(REPO_ROOT, name), self.core_dir)
         with open(os.path.join(self.core_dir, "ansible", "wrapper.yml"), "w") as f:
             f.write(
@@ -59,34 +59,34 @@ class TestLocalRepoSupplements(unittest.TestCase):
         return os.path.join(self.home_dir, name)
 
     def test_ignores_parent_directory_that_is_not_a_git_repo(self):
-        self._write_local("AGENTS.md", "not local instructions\n")
+        self._write_local("agent-instructions.md", "not local instructions\n")
         self._write_local("local.yml", "homebrew_formulae: [local-formula]\n")
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "AGENTS.md"))
+        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "agent-instructions.md"))
         self.assertFalse(os.path.lexists(self._home(".claude/CLAUDE.md")))
         with open(self._home("brew.json")) as f:
             self.assertNotIn("local-formula", json.load(f)["formulae"])
 
     def test_accepts_git_worktree_file_as_local_repo(self):
         self._write_local(".git", "gitdir: /elsewhere\n")
-        self._write_local("AGENTS.md", "local instructions\n")
+        self._write_local("agent-instructions.md", "local instructions\n")
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "AGENTS.md"))
+        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "agent-instructions.md"))
 
     def test_core_only_when_local_repo_has_no_supplements(self):
         os.makedirs(os.path.join(self.local_dir, ".git"))
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "AGENTS.md"))
+        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "agent-instructions.md"))
         self.assertFalse(os.path.lexists(self._home(".claude/CLAUDE.md")))
         with open(self._home("brew.json")) as f:
             self.assertIn("gh", json.load(f)["formulae"])
 
     def test_local_files_supplement_core(self):
         os.makedirs(os.path.join(self.local_dir, ".git"))
-        self._write_local("AGENTS.md", "local instructions\n")
+        self._write_local("agent-instructions.md", "local instructions\n")
         self._write_local("claude-settings.json", json.dumps({"permissions": {"allow": ["Bash(local)"]}}))
         self._write_local("config/tool", "local config\n")
         self._write_local(
@@ -98,7 +98,7 @@ class TestLocalRepoSupplements(unittest.TestCase):
         )
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "AGENTS.md"))
+        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "agent-instructions.md"))
         with open(self._home(".config/tool/config")) as f:
             self.assertEqual(f.read(), "local config\n")
         with open(self._home(".claude/settings.json")) as f:
@@ -110,6 +110,13 @@ class TestLocalRepoSupplements(unittest.TestCase):
         self.assertEqual(brew["formulae"][-1], "local-formula")
         self.assertIn("gh", brew["formulae"])
         self.assertEqual(brew["casks"][-1], "local-cask")
+
+
+class TestAgentInstructionsName(unittest.TestCase):
+    def test_repo_has_no_file_that_agents_load_as_project_instructions(self):
+        for name in ["AGENTS.md", "AGENT.md", "CLAUDE.md"]:
+            self.assertFalse(os.path.exists(os.path.join(REPO_ROOT, name)), name)
+        self.assertTrue(os.path.isfile(os.path.join(REPO_ROOT, "agent-instructions.md")))
 
 
 @unittest.skipUnless(shutil.which("zsh"), "zsh not found")
