@@ -4,6 +4,9 @@
   gather_facts: true
 
   tasks:
+    - name: Load local repo supplements
+      ansible.builtin.include_tasks: tasks/local.yml
+
     - name: Ensure packages are installed
       ansible.builtin.include_tasks: tasks/packages.yml
 

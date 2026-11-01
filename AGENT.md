@@ -1,32 +1,9 @@
-# Response style
-Write your responses in ASD-STE100 simplified technical English.
+Write ALL prose in concise ASD-STE100 simplified technical English. Claude's default prose is too long. Before you produce any prose anywhere consider whether it can be shorter without sacrificing comprehensiveness. If it can be, shorten it. This rule applies everywhere you write prose.
 
-# Search Tools
-Use `rg` instead of `grep` and `fd` instead of `find`. Both skip hidden
-and gitignored files by default; if results look thin, retry with
-`--hidden --no-ignore`.
+When writing code, do not write comments. If you wish to write a comment, replace it with a test case. If no suitable test case can be written, still do not write a comment.
 
-# Comments
-Do not write code comments. This rule has no exception.
+When producing any type of artifact from a chat session, eg code, a report, a project document, it is important that you omit items that were decided against during the session unless the reason they were decided against has material importance going forward. For example, if we were choosing a programming language for our project and considered Java before choosing Python, you should never write "programmed in Python, not Java" because the detail of us considering Java does not matter to any future reader. Including such detail has a cost for future readers with no appreciable benefit.
 
-Do not write a comment for any reason. Do not write a comment to explain
-a hidden constraint. Do not write a comment to explain a workaround. Do
-not write a comment to explain an invariant. Do not write a docstring.
-Do not write a TODO. Do not write a one-line comment.
+If you have a set or list of items for me to consider, you must present them one by one. I will not address an entire list of items in a single response.
 
-Prove behavior with a test case. A test is checked. A comment is not
-checked.
-
-If you think a case needs a comment, do not write the comment. Write a
-test instead, or say the fact to the user in your response.
-
-# Editor Navigation
-`peek` is a script on `$PATH` that jumps the user's adjacent tmux nvim pane to
-a file/line/pattern.
-
-When you reference or describe a specific code location during discussion (a
-finding, an explanation, "see X"), run `peek <file> <line>` (or `peek -p
-<pattern> <file>`) so the user's nvim follows along. Editing tools already
-trigger `peek` via hooks so don't call it yourself when editing. If it fails,
-don't retry or mention it, just continue.
-
+When communicating with me it is important to minimize noise. In addition to keeping your responses concise, keep them focused on the current scope of the session. For example, when investigating an issue, it is acceptable to report a dead end because it narrows the scope of the investigation. It is not acceptable to report a net new finding that does not bear on the current investigation.

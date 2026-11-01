@@ -6,7 +6,6 @@
       "Read(**)",
       "WebFetch",
       "WebSearch",
-      "Bash(peek:*)",
       "Bash(git *)",
       "Bash(gh *)",
       "Bash(ps:*)",
@@ -62,39 +61,6 @@
       "Bash(git branch -m *)",
       "Bash(git branch -c *)",
       "Bash(git branch -f *)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/scripts/claude-hook-edit"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/scripts/claude-hook-notify"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/scripts/claude-hook-stop"
-          }
-        ]
-      }
     ]
   },
   "sandbox": {
