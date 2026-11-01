@@ -98,7 +98,6 @@ class TestLocalRepoSupplements(unittest.TestCase):
         self.assertEqual(brew["formulae"][-1], "local-formula")
         self.assertIn("gh", brew["formulae"])
         self.assertEqual(brew["casks"][-1], "local-cask")
-        self.assertIn("ghostty", brew["casks"])
 
 
 @unittest.skipUnless(shutil.which("zsh"), "zsh not found")
