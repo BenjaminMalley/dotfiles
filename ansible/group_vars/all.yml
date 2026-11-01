@@ -35,8 +35,7 @@ homebrew_casks:
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]
 terminal_settings:
   - { key: "shellExitAction", type: "integer", value: "1" }
-  - { key: "BackgroundAlphaInactive", type: "real", value: "0.5" }
-  - { key: "BackgroundSettingsForInactiveWindows", type: "bool", value: "true" }
+  - { key: "BackgroundSettingsForInactiveWindows", type: "bool", value: "false" }
 
 managed_login_items:
   - { type: "TeamIdentifier", value: "MXGJJ98X76", comment: "Steam", disposition: "Disallowed" }
