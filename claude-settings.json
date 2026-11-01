@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "auto",
     "allow": [
       "Agent",
       "Read(**)",
@@ -45,21 +45,11 @@
       "Bash(git push *)"
     ],
     "ask": [
-      "Bash(git push-base)",
-      "Bash(git push-base *)",
       "Bash(git reset --hard *)",
       "Bash(git clean *)",
-      "Bash(gh pr merge *)",
-      "Bash(gh pr close *)",
-      "Bash(gh release *)",
-      "Bash(git checkout -b *)",
       "Bash(git checkout -B *)",
-      "Bash(git switch -c *)",
       "Bash(git switch -C *)",
-      "Bash(git branch -d *)",
       "Bash(git branch -D *)",
-      "Bash(git branch -m *)",
-      "Bash(git branch -c *)",
       "Bash(git branch -f *)"
     ]
   },
