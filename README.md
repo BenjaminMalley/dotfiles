@@ -4,19 +4,28 @@ Personal configuration files for macOS.
 
 ## Installation
 
-This repo is the core. Each computer uses a local repo that holds this repo as a
-submodule at `./dotfiles` and adds its own files. Clone the local repo with its
-submodule, then run the bootstrap from it:
+This repo is the core. A computer can also use a local repo that holds this repo
+as a git subtree at `./dotfiles` and adds its own files. Run the bootstrap from
+the local repo:
 
 ```bash
-git clone --recurse-submodules <local repo> && cd <local repo>
+git clone <local repo> && cd <local repo>
 ./dotfiles/bootstrap.sh
 ```
+
+Without a local repo, run `./bootstrap.sh` from this repo to install the core
+only. The bootstrap uses the parent directory of this repo as the local repo when
+that directory is the root of a git repo.
 
 After the first run, `dotfiles` re-runs the setup from any directory.
 ** Note: The script assumes a working `python3` **
 
-The bootstrap fails if the parent directory of this repo has no `.gitmodules`.
+To add this repo to a local repo, or to update it there:
+
+```bash
+git subtree add --prefix dotfiles https://github.com/BenjaminMalley/dotfiles.git main --squash
+git subtree pull --prefix dotfiles https://github.com/BenjaminMalley/dotfiles.git main --squash
+```
 
 ## Local repo
 
@@ -26,7 +35,7 @@ same kind:
 | Local file | Effect |
 | --- | --- |
 | `local.yml` | `homebrew_formulae`, `homebrew_casks` and `dotfiles` lists are appended to the core lists in `ansible/group_vars/all.yml`. `dotfiles` sources are relative to the local repo. |
-| `AGENT.md` | Linked to `~/.claude/CLAUDE.md`. The core `AGENT.md` is linked to `~/.claude/rules/core.md`, so Claude Code loads both. |
+| `AGENTS.md` | Linked to `~/.claude/CLAUDE.md`. The core `AGENTS.md` is linked to `~/.claude/rules/core.md`, so Claude Code loads both. |
 | `claude-settings.json` | Merged into the core `claude-settings.json` to make `~/.claude/settings.json`. Lists are appended. |
 | `zshrc` | Sourced by the core `zshrc`. |
 | `scripts/` | Added to `PATH` after the core `scripts/`. |

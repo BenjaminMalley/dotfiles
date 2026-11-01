@@ -42,7 +42,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
     if ! brew list --formula --versions "$PYTHON_FORMULA" >/dev/null 2>&1; then
         brew install "$PYTHON_FORMULA"
     fi
-    PYTHON_BIN="$(brew --prefix "$PYTHON_FORMULA")/libexec/bin/python3"
+    PYTHON_BIN="$(brew --prefix "$PYTHON_FORMULA")/libexec/bin/python"
 else
     if ! command_exists python3; then
         echo "python3 not found. Install python3 before running bootstrap." >&2

@@ -20,7 +20,7 @@ class TestLocalRepoSupplements(unittest.TestCase):
         self.home_dir = os.path.join(self.tmp_dir, "home")
         os.makedirs(self.home_dir)
         shutil.copytree(os.path.join(REPO_ROOT, "ansible"), os.path.join(self.core_dir, "ansible"))
-        for name in ["AGENT.md", "claude-settings.json"]:
+        for name in ["AGENTS.md", "claude-settings.json"]:
             shutil.copy(os.path.join(REPO_ROOT, name), self.core_dir)
         with open(os.path.join(self.core_dir, "ansible", "wrapper.yml"), "w") as f:
             f.write(
@@ -58,23 +58,35 @@ class TestLocalRepoSupplements(unittest.TestCase):
     def _home(self, name):
         return os.path.join(self.home_dir, name)
 
-    def test_requires_local_repo_with_submodule(self):
-        result = self._run()
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("has no .gitmodules", result.stdout)
-
-    def test_core_only_when_local_repo_has_no_supplements(self):
-        self._write_local(".gitmodules", "")
+    def test_ignores_parent_directory_that_is_not_a_git_repo(self):
+        self._write_local("AGENTS.md", "not local instructions\n")
+        self._write_local("local.yml", "homebrew_formulae: [local-formula]\n")
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "AGENT.md"))
+        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "AGENTS.md"))
+        self.assertFalse(os.path.lexists(self._home(".claude/CLAUDE.md")))
+        with open(self._home("brew.json")) as f:
+            self.assertNotIn("local-formula", json.load(f)["formulae"])
+
+    def test_accepts_git_worktree_file_as_local_repo(self):
+        self._write_local(".git", "gitdir: /elsewhere\n")
+        self._write_local("AGENTS.md", "local instructions\n")
+        result = self._run()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "AGENTS.md"))
+
+    def test_core_only_when_local_repo_has_no_supplements(self):
+        os.makedirs(os.path.join(self.local_dir, ".git"))
+        result = self._run()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(os.readlink(self._home(".claude/rules/core.md")), os.path.join(os.path.realpath(self.core_dir), "AGENTS.md"))
         self.assertFalse(os.path.lexists(self._home(".claude/CLAUDE.md")))
         with open(self._home("brew.json")) as f:
             self.assertIn("gh", json.load(f)["formulae"])
 
     def test_local_files_supplement_core(self):
-        self._write_local(".gitmodules", "")
-        self._write_local("AGENT.md", "local instructions\n")
+        os.makedirs(os.path.join(self.local_dir, ".git"))
+        self._write_local("AGENTS.md", "local instructions\n")
         self._write_local("claude-settings.json", json.dumps({"permissions": {"allow": ["Bash(local)"]}}))
         self._write_local("config/tool", "local config\n")
         self._write_local(
@@ -86,7 +98,7 @@ class TestLocalRepoSupplements(unittest.TestCase):
         )
         result = self._run()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "AGENT.md"))
+        self.assertEqual(os.readlink(self._home(".claude/CLAUDE.md")), os.path.join(os.path.realpath(self.local_dir), "AGENTS.md"))
         with open(self._home(".config/tool/config")) as f:
             self.assertEqual(f.read(), "local config\n")
         with open(self._home(".claude/settings.json")) as f:
@@ -125,15 +137,31 @@ class TestZshrcLocalRepo(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout.splitlines()
 
+    def _scripts_dirs(self):
+        return os.path.join(os.path.realpath(self.core_dir), "scripts"), os.path.join(os.path.realpath(self.local_dir), "scripts")
+
+    def _write_local_zshrc(self):
+        with open(os.path.join(self.local_dir, "zshrc"), "w") as f:
+            f.write("export LOCAL_MARKER=loaded\n")
+
     def test_core_scripts_precede_local_scripts_on_path(self):
+        os.makedirs(os.path.join(self.local_dir, ".git"))
         path = self._source_zshrc()[0].split(":")
-        core, local = os.path.join(os.path.realpath(self.core_dir), "scripts"), os.path.join(os.path.realpath(self.local_dir), "scripts")
+        core, local = self._scripts_dirs()
         self.assertLess(path.index(core), path.index(local))
 
     def test_sources_local_zshrc(self):
-        with open(os.path.join(self.local_dir, "zshrc"), "w") as f:
-            f.write("export LOCAL_MARKER=loaded\n")
+        os.makedirs(os.path.join(self.local_dir, ".git"))
+        self._write_local_zshrc()
         self.assertEqual(self._source_zshrc()[1], "loaded")
+
+    def test_ignores_parent_directory_that_is_not_a_git_repo(self):
+        self._write_local_zshrc()
+        lines = self._source_zshrc()
+        core, local = self._scripts_dirs()
+        self.assertIn(core, lines[0].split(":"))
+        self.assertNotIn(local, lines[0].split(":"))
+        self.assertEqual(lines[1], "")
 
 
 if __name__ == "__main__":

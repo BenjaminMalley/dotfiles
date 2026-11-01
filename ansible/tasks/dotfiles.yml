@@ -5,18 +5,13 @@
     mode: "0755"
   loop: "{{ (['.claude/rules'] + ((dotfiles + local_dotfiles) | map(attribute='dest') | map('dirname') | list)) | select | unique }}"
 
-- name: Check for local Claude Code settings
-  ansible.builtin.stat:
-    path: "{{ local_repo }}/claude-settings.json"
-  register: local_claude_settings
-
 - name: Generate merged ~/.claude/settings.json
   ansible.builtin.copy:
     content: >-
       {{
         (lookup('file', core_repo + '/claude-settings.json') | from_json)
         | combine(
-            (lookup('file', local_repo + '/claude-settings.json') | from_json) if local_claude_settings.stat.exists else {},
+            (lookup('file', local_repo + '/claude-settings.json') | from_json) if local_repo is defined and (local_repo + '/claude-settings.json') is file else {},
             recursive=true,
             list_merge='append_rp'
           )
@@ -52,20 +47,15 @@
 
 - name: Symlink core agent instructions
   ansible.builtin.file:
-    src: "{{ core_repo }}/AGENT.md"
+    src: "{{ core_repo }}/AGENTS.md"
     dest: "{{ ansible_facts['user_dir'] }}/.claude/rules/core.md"
     state: link
     force: true
 
-- name: Check for local agent instructions
-  ansible.builtin.stat:
-    path: "{{ local_repo }}/AGENT.md"
-  register: local_agent_instructions
-
 - name: Symlink local agent instructions
   ansible.builtin.file:
-    src: "{{ local_repo }}/AGENT.md"
+    src: "{{ local_repo }}/AGENTS.md"
     dest: "{{ ansible_facts['user_dir'] }}/.claude/CLAUDE.md"
     state: link
     force: true
-  when: local_agent_instructions.stat.exists
+  when: local_repo is defined and (local_repo + '/AGENTS.md') is file

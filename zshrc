@@ -13,8 +13,10 @@ fi
 if [[ -L "$HOME/.zshrc" ]]; then
     zshrc_path="$HOME/.zshrc"
     DOTFILES_DIR=${zshrc_path:A:h}
-    LOCAL_DIR=${DOTFILES_DIR:h}
-    for scripts_dir in "$LOCAL_DIR/scripts" "$DOTFILES_DIR/scripts"; do
+    if [[ -e "${DOTFILES_DIR:h}/.git" ]]; then
+        LOCAL_DIR=${DOTFILES_DIR:h}
+    fi
+    for scripts_dir in "${LOCAL_DIR:+$LOCAL_DIR/scripts}" "$DOTFILES_DIR/scripts"; do
         if [[ -d "$scripts_dir" ]]; then
             export PATH="$scripts_dir:$PATH"
         fi
