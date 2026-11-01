@@ -11,10 +11,14 @@ fi
 
 # Add dotfiles scripts to PATH
 if [[ -L "$HOME/.zshrc" ]]; then
-    DOTFILES_DIR=$(dirname "$(readlink "$HOME/.zshrc")")
-    if [[ -d "$DOTFILES_DIR/scripts" ]]; then
-        export PATH="$DOTFILES_DIR/scripts:$PATH"
-    fi
+    zshrc_path="$HOME/.zshrc"
+    DOTFILES_DIR=${zshrc_path:A:h}
+    LOCAL_DIR=${DOTFILES_DIR:h}
+    for scripts_dir in "$LOCAL_DIR/scripts" "$DOTFILES_DIR/scripts"; do
+        if [[ -d "$scripts_dir" ]]; then
+            export PATH="$scripts_dir:$PATH"
+        fi
+    done
 fi
 
 set -o vi
@@ -22,14 +26,9 @@ export EDITOR=nvim
 export VISUAL=nvim
 bindkey -M vicmd '/' history-incremental-search-backward
 
-if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-    # Try to attach to the session if it exists (naming logic is inside wts)
-    wts --attach &>/dev/null
-fi
-
 # Source local configuration
-if [ -f ~/.zshrc.local ]; then
-  . ~/.zshrc.local
+if [[ -n "$LOCAL_DIR" && -f "$LOCAL_DIR/zshrc" ]]; then
+  . "$LOCAL_DIR/zshrc"
 fi
 
 # Fix SSH Agent in tmux: symlink the dynamic socket to a static path

@@ -37,4 +37,10 @@ jobs:
           ansible-lint --skip-list args,fqcn[action-core],yaml[line-length],jinja[spacing],risky-file-permissions ansible/local.yml
 
       - name: Ansible Dry Run (Check Mode)
-        run: ansible-playbook ansible/local.yml -i localhost, --check -e "ansible_user_dir=$HOME"
+        run: |
+          local_repo="$RUNNER_TEMP/local"
+          mkdir -p "$local_repo"
+          touch "$local_repo/.gitmodules"
+          cp -R . "$local_repo/dotfiles"
+          cd "$local_repo/dotfiles"
+          ansible-playbook ansible/local.yml -i localhost, --check -e "ansible_user_dir=$HOME"

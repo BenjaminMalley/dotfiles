@@ -4,13 +4,41 @@ Personal configuration files for macOS.
 
 ## Installation
 
+This repo is the core. Each computer uses a local repo that holds this repo as a
+submodule at `./dotfiles` and adds its own files. Clone the local repo with its
+submodule, then run the bootstrap from it:
+
 ```bash
-./bootstrap.sh
+git clone --recurse-submodules <local repo> && cd <local repo>
+./dotfiles/bootstrap.sh
 ```
 
-This will symlink the dotfiles and set up configurations, including installing
-Homebrew packages. The package list lives in `ansible/group_vars/all.yml`.
+After the first run, `dotfiles` re-runs the setup from any directory.
 ** Note: The script assumes a working `python3` **
+
+The bootstrap fails if the parent directory of this repo has no `.gitmodules`.
+
+## Local repo
+
+Every file in the local repo is optional. Each one adds to the core file of the
+same kind:
+
+| Local file | Effect |
+| --- | --- |
+| `local.yml` | `homebrew_formulae`, `homebrew_casks` and `dotfiles` lists are appended to the core lists in `ansible/group_vars/all.yml`. `dotfiles` sources are relative to the local repo. |
+| `AGENT.md` | Linked to `~/.claude/CLAUDE.md`. The core `AGENT.md` is linked to `~/.claude/rules/core.md`, so Claude Code loads both. |
+| `claude-settings.json` | Merged into the core `claude-settings.json` to make `~/.claude/settings.json`. Lists are appended. |
+| `zshrc` | Sourced by the core `zshrc`. |
+| `scripts/` | Added to `PATH` after the core `scripts/`. |
+
+Example `local.yml`:
+
+```yaml
+homebrew_formulae: [node]
+homebrew_casks: [vlc]
+dotfiles:
+  - { source: "config/tool", dest: ".config/tool/config" }
+```
 
 ## Neovim Cheatsheet
 
@@ -54,27 +82,7 @@ Neovim configuration uses **`lazy.nvim`** for plugin management and **`fzf-lua`*
 - **tmux**: Configured in `.tmux.conf`
 - **Vim/Neovim**: Configured in `.vimrc` and `nvim/`
 - **Ghostty**: Configured in `ghostty/config`
-- **Scripts**: Located in `scripts/` (e.g., `peek`, `wts`, `dotfiles`)
-
-## Worktree Session Tool (`wts`)
-
-`wts` is a script for managing git worktrees and tmux sessions in a unified way. It's designed for a "one branch per worktree/session" workflow.
-
-### Features
-- **Automatic Branch Prefixing**: Prefixes branches with `{user}/{repo}-` to avoid collisions in shared repositories.
-- **Tmux Integration**: Automatically creates a new tmux session with a split-pane layout (Agent pane + Neovim pane).
-- **Worktree Management**: Handles `git worktree` creation and removal.
-- **Easy Cleanup**: One command to remove the worktree and kill the tmux session once finished.
-
-### Usage
-- `wts <branch-name>`: Create (or switch to) a worktree and tmux session for the specified branch.
-- `wts -n <session-name>`: Create a tmux session without creating a git worktree.
-- `wts -s <session-name>`: Create a standalone session with no git repo at all, rooted at `~/sessions/<session-name>`. Use this for work that isn't tied to a repo, such as goalie/on-call issues or program-management docs.
-- `wts -d`: (Done) Clean up the current session—removes the worktree (if it's in `~/worktrees`) or the standalone directory (if it's in `~/sessions`), and kills the tmux session.
-- `wts -a <session-name>`: Attach to an existing tmux session.
-
-### Configuration
-- `WTS_AGENT_CMD`: Set this environment variable in your `.zshrc` to automatically run a command (like `claude`) in the Agent pane upon session creation.
+- **Scripts**: Located in `scripts/` (`dotfiles`, `git-chain`, `gh-create`)
 
 ## Git Shortcuts
 

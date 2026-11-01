@@ -3,24 +3,20 @@
     path: "{{ ansible_facts['user_dir'] }}/{{ item }}"
     state: directory
     mode: "0755"
-  loop:
-    - .config/ghostty
-    - .config/nvim
-    - .claude/agents
-    - .claude/skills
+  loop: "{{ (['.claude/rules'] + ((dotfiles + local_dotfiles) | map(attribute='dest') | map('dirname') | list)) | select | unique }}"
 
-- name: Check for machine-local Claude Code settings overrides
+- name: Check for local Claude Code settings
   ansible.builtin.stat:
-    path: "{{ claude_local_settings_path }}"
-  register: claude_local_settings_stat
+    path: "{{ local_repo }}/claude-settings.json"
+  register: local_claude_settings
 
 - name: Generate merged ~/.claude/settings.json
   ansible.builtin.copy:
     content: >-
       {{
-        (lookup('file', playbook_dir + '/../claude-settings.json') | from_json)
+        (lookup('file', core_repo + '/claude-settings.json') | from_json)
         | combine(
-            (lookup('file', claude_local_settings_path) | from_json) if claude_local_settings_stat.stat.exists else {},
+            (lookup('file', local_repo + '/claude-settings.json') | from_json) if local_claude_settings.stat.exists else {},
             recursive=true,
             list_merge='append_rp'
           )
@@ -38,45 +34,38 @@
     create: true
     mode: "0644"
 
-- name: Symlink standard dotfiles
+- name: Symlink core dotfiles
   ansible.builtin.file:
-    src: "{{ playbook_dir }}/../{{ item.source }}"
+    src: "{{ core_repo }}/{{ item.source }}"
     dest: "{{ ansible_facts['user_dir'] }}/{{ item.dest }}"
     state: link
     force: true
   loop: "{{ dotfiles }}"
 
-- name: Symlink optional dotfiles
+- name: Symlink local dotfiles
   ansible.builtin.file:
-    src: "{{ playbook_dir }}/../{{ item.source }}"
+    src: "{{ local_repo }}/{{ item.source }}"
     dest: "{{ ansible_facts['user_dir'] }}/{{ item.dest }}"
     state: link
     force: true
-  loop: "{{ optional_dotfiles }}"
-  when: install_optional | default(false) | bool
+  loop: "{{ local_dotfiles }}"
 
-- name: Symlink agent files
+- name: Symlink core agent instructions
   ansible.builtin.file:
-    src: "{{ item }}"
-    dest: "{{ ansible_facts['user_dir'] }}/.claude/agents/{{ item | basename }}"
+    src: "{{ core_repo }}/AGENT.md"
+    dest: "{{ ansible_facts['user_dir'] }}/.claude/rules/core.md"
     state: link
     force: true
-  with_fileglob:
-    - "{{ playbook_dir }}/../agents/*"
 
-- name: Symlink skill directories
+- name: Check for local agent instructions
+  ansible.builtin.stat:
+    path: "{{ local_repo }}/AGENT.md"
+  register: local_agent_instructions
+
+- name: Symlink local agent instructions
   ansible.builtin.file:
-    src: "{{ item }}"
-    dest: "{{ ansible_facts['user_dir'] }}/.claude/skills/{{ item | basename }}"
+    src: "{{ local_repo }}/AGENT.md"
+    dest: "{{ ansible_facts['user_dir'] }}/.claude/CLAUDE.md"
     state: link
     force: true
-  with_fileglob:
-    - "{{ playbook_dir }}/../skills/*"
-  when: item is directory
-
-- name: Symlink scripts directory
-  ansible.builtin.file:
-    src: "{{ playbook_dir }}/../scripts"
-    dest: "{{ ansible_facts['user_dir'] }}/.claude/scripts"
-    state: link
-    force: true
+  when: local_agent_instructions.stat.exists

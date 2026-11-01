@@ -6,15 +6,7 @@ dotfiles:
   - { source: "vimrc", dest: ".vimrc" }
   - { source: "nvim", dest: ".config/nvim" }
   - { source: "ghostty/config", dest: ".config/ghostty/config" }
-  - { source: "AGENT.md", dest: ".claude/CLAUDE.md" }
-
-# ~/.claude/settings.json is generated (not symlinked) so it can merge in an
-# optional machine-local override file. See the "Generate merged Claude Code
-# settings" task in tasks/dotfiles.yml.
-claude_local_settings_path: "{{ ansible_facts['user_dir'] }}/repos/dotfiles-local/claude/settings.local.json"
-
-optional_dotfiles:
-  - { source: "editorconfig", dest: ".editorconfig", description: "global editorconfig file" }
+  - { source: "editorconfig", dest: ".editorconfig" }
 
 macos_services_to_restart:
   - Dock
@@ -28,6 +20,7 @@ homebrew_formulae:
   - container
   - fd
   - fzf
+  - gh
   - glow
   - jdtls
   - neovim
@@ -40,23 +33,6 @@ homebrew_casks:
   - anki
   - ghostty
   - netnewswire
-
-optional_homebrew_formulae:
-  - gh
-  - node
-
-optional_homebrew_casks:
-  - blackhole-2ch
-  - claude-code
-  - crossover
-  - dolphin
-  - iina
-  - ilok-license-manager
-  - retroarch-metal
-  - steam
-  - stremio
-  - valhalla-supermassive
-  - vlc
 
 terminal_profiles: ["Basic", "Pro", "Clear Dark"]
 terminal_settings:
