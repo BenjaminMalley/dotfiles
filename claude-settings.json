@@ -80,5 +80,6 @@
   "editorMode": "vim",
   "enabledPlugins": {
     "clangd-lsp@claude-plugins-official": true
-  }
+  },
+  "autoMemoryEnabled": false
 }
