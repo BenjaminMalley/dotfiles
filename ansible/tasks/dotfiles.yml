@@ -47,15 +47,15 @@
 
 - name: Symlink core agent instructions
   ansible.builtin.file:
-    src: "{{ core_repo }}/AGENTS.md"
+    src: "{{ core_repo }}/agent-instructions.md"
     dest: "{{ ansible_facts['user_dir'] }}/.claude/rules/core.md"
     state: link
     force: true
 
 - name: Symlink local agent instructions
   ansible.builtin.file:
-    src: "{{ local_repo }}/AGENTS.md"
+    src: "{{ local_repo }}/agent-instructions.md"
     dest: "{{ ansible_facts['user_dir'] }}/.claude/CLAUDE.md"
     state: link
     force: true
-  when: local_repo is defined and (local_repo + '/AGENTS.md') is file
+  when: local_repo is defined and (local_repo + '/agent-instructions.md') is file
