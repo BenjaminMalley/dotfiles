@@ -48,6 +48,7 @@
     - { domain: 'NSGlobalDomain', key: 'NSAutomaticQuoteSubstitutionEnabled', type: 'bool', value: false }
     - { domain: 'NSGlobalDomain', key: 'NSAutomaticDashSubstitutionEnabled', type: 'bool', value: false }
     - { domain: 'com.apple.WindowManager', key: 'GloballyEnabled', type: 'bool', value: true }
+    - { domain: 'com.apple.WindowManager', key: 'EnableTiledWindowMargins', type: 'bool', value: true }
     - { domain: 'com.apple.finder', key: 'AppleShowAllFiles', type: 'bool', value: true }
     - { domain: 'NSGlobalDomain', key: 'AppleShowAllExtensions', type: 'bool', value: true }
     - { domain: 'com.apple.finder', key: 'ShowStatusBar', type: 'bool', value: true }
@@ -111,6 +112,7 @@
     # value for this hotkey category always includes the fn/globe bit
     # (0x800000), even when globe is not part of the binding:
     # 10223616 = 0x9C0000 = globe-bit + ctrl + cmd + opt.
+    - { id: 237, keycode: 126, modifiers: 10223616 } # Tile Fill: ctrl+cmd+opt+up
     - { id: 240, keycode: 123, modifiers: 10223616 } # Tile Left Half: ctrl+cmd+opt+left
     - { id: 241, keycode: 124, modifiers: 10223616 } # Tile Right Half: ctrl+cmd+opt+right
   changed_when: true
