@@ -37,10 +37,12 @@ if [ "$(uname -s)" = "Darwin" ] && ! command_exists brew; then
 fi
 
 if [ "$(uname -s)" = "Darwin" ]; then
-    if ! brew list --formula --versions python3 >/dev/null 2>&1; then
-        brew install python3
+    # Pinned because ansible-core 2.21 does not support Python 3.15.
+    PYTHON_FORMULA="python@3.14"
+    if ! brew list --formula --versions "$PYTHON_FORMULA" >/dev/null 2>&1; then
+        brew install "$PYTHON_FORMULA"
     fi
-    PYTHON_BIN="$(brew --prefix python3)/bin/python3"
+    PYTHON_BIN="$(brew --prefix "$PYTHON_FORMULA")/libexec/bin/python3"
 else
     if ! command_exists python3; then
         echo "python3 not found. Install python3 before running bootstrap." >&2
@@ -51,8 +53,9 @@ fi
 
 # Create a virtual environment for Ansible
 VENV_DIR=".venv"
-if [ ! -d "$VENV_DIR" ]; then
+if [ "$("$VENV_DIR/bin/python3" -V 2>/dev/null)" != "$("$PYTHON_BIN" -V)" ]; then
     echo "Creating virtual environment in $VENV_DIR..."
+    rm -rf "$VENV_DIR"
     "$PYTHON_BIN" -m venv "$VENV_DIR"
 fi
 
